@@ -26,6 +26,18 @@ typedef struct surfactant
 	char filename[100];
 } SURFACTANT;
 
+typedef struct coordinates
+{
+	int sino, col5;
+	float x, y, z, col9, col10;
+	char atomName1[5], atomName2[5], molName[5];
+} COORDINATES;
+
+typedef struct bonds
+{
+	int atom1, atom2, atom3, atom4, atom5, atom6;
+} BONDS;
+
 int checkNSurfactants (FILE *readConfig)
 {
 	char lineString[1000];
@@ -146,6 +158,113 @@ SURFACTANT *getNBonds (SURFACTANT *inputStructures, int nSurfactants)
 	return inputStructures;
 }
 
+COORDINATES **assigningMemory_atoms (COORDINATES **inputCoordinates, int nSurfactants, SURFACTANT *inputStructures)
+{
+	inputCoordinates = (COORDINATES **) malloc (nSurfactants * sizeof (COORDINATES *));
+
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		printf("Assigning %d mem for surfactant %d\n", inputStructures[i].nAtoms, nSurfactants);
+		inputCoordinates[i] = (COORDINATES *) malloc (inputStructures[i].nAtoms * sizeof (COORDINATES));
+	}
+
+	return inputCoordinates;
+}
+
+BONDS **assigningMemory_bonds (BONDS **inputBonds, int nSurfactants, SURFACTANT *inputStructures)
+{
+	inputBonds = (BONDS **) malloc (nSurfactants * sizeof (BONDS **));
+
+	for (int i = 0; i < nSurfactants; ++i)
+		inputBonds[i] = (BONDS *) malloc (inputStructures[i].nBonds * sizeof (BONDS));
+
+	return inputBonds;
+}
+
+COORDINATES **readCoordinates (COORDINATES **inputCoordinates, int nSurfactants, SURFACTANT *inputStructures)
+{
+	char lineString[2000];
+	int sino_local;
+
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		FILE *inputFile;
+		inputFile = fopen (inputStructures[i].filename, "r");
+
+		printf("Opening %s\n", inputStructures[i].filename);
+
+		while (fgets (lineString, 2000, inputFile) != NULL)
+		{
+			if (strstr (lineString, "ATOM") || strstr (lineString, "HETATM"))
+			{
+				sscanf (lineString, "%*s %d %*s %*s %*d %*f %*f %*f %*f %*f %*s\n", &sino_local);
+				sscanf (lineString, "%*s %d %s %s %d %f %f %f %f %f %s\n", 
+					&inputCoordinates[i][sino_local].sino, 
+					&inputCoordinates[i][sino_local].atomName1, 
+					&inputCoordinates[i][sino_local].molName, 
+					&inputCoordinates[i][sino_local].col5, 
+					&inputCoordinates[i][sino_local].x, 
+					&inputCoordinates[i][sino_local].y, 
+					&inputCoordinates[i][sino_local].z, 
+					&inputCoordinates[i][sino_local].col9, 
+					&inputCoordinates[i][sino_local].col10, 
+					&inputCoordinates[i][sino_local].atomName2);
+
+				printf("%d\n", inputCoordinates[i][sino_local].sino);
+			}
+		}
+
+		fclose (inputFile);
+	}
+
+	return inputCoordinates;
+}
+
+BONDS **readBonds (BONDS **inputBonds, int nSurfactants, SURFACTANT *inputStructures)
+{
+	char lineString[2000];
+	int sino_local;
+
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		FILE *inputFile;
+		inputFile = fopen (inputStructures[i].filename, "r");
+
+		// Initializing the values to '0'
+		printf("%d\n", inputStructures[i].nBonds);
+		fflush (stdout);
+
+		for (int j = 0; j < inputStructures[i].nBonds; ++j)
+		{
+			printf("%d\n", inputBonds[i][j].atom1);
+			// inputBonds[i][j].atom1 = 0;
+			// inputBonds[i][j].atom2 = 0;
+			// inputBonds[i][j].atom3 = 0;
+			// inputBonds[i][j].atom4 = 0;
+			// inputBonds[i][j].atom5 = 0;
+			// inputBonds[i][j].atom6 = 0;
+		}
+
+		while (fgets (lineString, 2000, inputFile) != NULL)
+		{
+			if (strstr (lineString, "CONECT"))
+			{
+				sscanf (lineString, "%*s %d %*d %*d %*d %*d %*d %*d\n", &sino_local);
+				sscanf (lineString, "%*s %*d %d %d %d %d %d %d\n", 
+					&inputBonds[i][sino_local].atom1, 
+					&inputBonds[i][sino_local].atom2, 
+					&inputBonds[i][sino_local].atom3, 
+					&inputBonds[i][sino_local].atom4, 
+					&inputBonds[i][sino_local].atom5, 
+					&inputBonds[i][sino_local].atom6);
+			}
+		}
+
+		fclose (inputFile);
+	}
+
+	return inputBonds;
+}
 
 int main(int argc, char const *argv[])
 {
@@ -155,17 +274,14 @@ int main(int argc, char const *argv[])
 	FILE *readConfig;
 	readConfig = fopen (argv[1], "r");
 
-	/*
-		These are the parameters to take from input config file:
-			
-			1. Total number of surfactant molecules
-			2. Input surfactant file name along with the total number of molecules
-			3. Packing factor of each molecules
-
-			NOTE: Any line starting with '#' can be considered as commented line
-	*/
-
 	int nSurfactants = checkNSurfactants (readConfig); // This value is coming from input config file.
+	/*	
+		SURFACTANT:
+		~~~~~~~~~~
+		int nMolecules, nAtoms, nBonds;
+		float packingFactor;
+		char filename[100];
+	*/
 	SURFACTANT *inputStructures;
 	inputStructures = (SURFACTANT *) malloc (nSurfactants * sizeof (SURFACTANT));
 
@@ -173,10 +289,27 @@ int main(int argc, char const *argv[])
 	inputStructures = getNAtoms (inputStructures, nSurfactants);
 	inputStructures = getNBonds (inputStructures, nSurfactants);
 
-	for (int i = 0; i < nSurfactants; ++i)
-	{
-		printf("%s %d %f %d %d\n", inputStructures[i].filename, inputStructures[i].nMolecules, inputStructures[i].packingFactor, inputStructures[i].nAtoms, inputStructures[i].nBonds);
-	}
+	// Create variables to store atom coordinates and bond connectivity information
+	COORDINATES **inputCoordinates;
+	BONDS **inputBonds;
+
+	inputCoordinates = assigningMemory_atoms (inputCoordinates, nSurfactants, inputStructures);
+	inputBonds = assigningMemory_bonds (inputBonds, nSurfactants, inputStructures);
+
+	/*
+		COORDINATES:
+		~~~~~~~~~~~
+		int sino, col5;
+		float x, y, z, col9, col10;
+		char atomName1[5], atomName2[5], molName[5];
+
+		BONDS:
+		~~~~~
+		int atom1, atom2, atom3, atom4, atom5, atom6;
+	*/
+
+	inputCoordinates = readCoordinates (inputCoordinates, nSurfactants, inputStructures);
+	inputBonds = readBonds (inputBonds, nSurfactants, inputStructures);
 
 	free (inputStructures);
 	fclose (readConfig);
