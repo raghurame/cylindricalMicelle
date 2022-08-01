@@ -195,6 +195,7 @@ COORDINATES **readCoordinates (COORDINATES **inputCoordinates, int nSurfactants,
 
 		while (fgets (lineString, 2000, inputFile) != NULL)
 		{
+			// This is not counting for all the lines in DDAB. Check the follwing using printf statements
 			if (strstr (lineString, "ATOM") || strstr (lineString, "HETATM"))
 			{
 				sscanf (lineString, "%*s %d %*s %*s %*d %*f %*f %*f %*f %*f %*s\n", &sino_local);
