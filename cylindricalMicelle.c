@@ -158,33 +158,18 @@ SURFACTANT *getNBonds (SURFACTANT *inputStructures, int nSurfactants)
 	return inputStructures;
 }
 
-COORDINATES **assigningMemory_atoms (COORDINATES **inputCoordinates, int nSurfactants, SURFACTANT *inputStructures)
+COORDINATES **readCoordinates (COORDINATES **inputCoordinates, int nSurfactants, SURFACTANT *inputStructures)
 {
+	char lineString[2000];
+	int sino_local = 0;
+
 	inputCoordinates = (COORDINATES **) malloc (nSurfactants * sizeof (COORDINATES *));
 
 	for (int i = 0; i < nSurfactants; ++i)
 	{
-		printf("Assigning %d mem for surfactant %d\n", inputStructures[i].nAtoms, nSurfactants);
+		printf("Assigning %d mem (COORDINATES) for %s\n", inputStructures[i].nAtoms, inputStructures[i].filename);
 		inputCoordinates[i] = (COORDINATES *) malloc (inputStructures[i].nAtoms * sizeof (COORDINATES));
 	}
-
-	return inputCoordinates;
-}
-
-BONDS **assigningMemory_bonds (BONDS **inputBonds, int nSurfactants, SURFACTANT *inputStructures)
-{
-	inputBonds = (BONDS **) malloc (nSurfactants * sizeof (BONDS **));
-
-	for (int i = 0; i < nSurfactants; ++i)
-		inputBonds[i] = (BONDS *) malloc (inputStructures[i].nBonds * sizeof (BONDS));
-
-	return inputBonds;
-}
-
-COORDINATES **readCoordinates (COORDINATES **inputCoordinates, int nSurfactants, SURFACTANT *inputStructures)
-{
-	char lineString[2000];
-	int sino_local;
 
 	for (int i = 0; i < nSurfactants; ++i)
 	{
@@ -210,8 +195,6 @@ COORDINATES **readCoordinates (COORDINATES **inputCoordinates, int nSurfactants,
 					&inputCoordinates[i][sino_local].col9, 
 					&inputCoordinates[i][sino_local].col10, 
 					&inputCoordinates[i][sino_local].atomName2);
-
-				printf("%d\n", inputCoordinates[i][sino_local].sino);
 			}
 		}
 
@@ -226,39 +209,29 @@ BONDS **readBonds (BONDS **inputBonds, int nSurfactants, SURFACTANT *inputStruct
 	char lineString[2000];
 	int sino_local;
 
+	inputBonds = (BONDS **) malloc (nSurfactants * sizeof (BONDS *));
+
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		printf("Assigning %d mem (BONDS) for %s\n", inputStructures[i].nBonds, inputStructures[i].filename);
+		inputBonds[i] = (BONDS *) malloc (inputStructures[i].nBonds * sizeof (BONDS));
+	}
+
 	for (int i = 0; i < nSurfactants; ++i)
 	{
 		FILE *inputFile;
 		inputFile = fopen (inputStructures[i].filename, "r");
 
-		// Initializing the values to '0'
-		printf("%d\n", inputStructures[i].nBonds);
-		fflush (stdout);
+		printf("Number of bonds in this surfactant: %d\n", inputStructures[i].nBonds);
 
 		for (int j = 0; j < inputStructures[i].nBonds; ++j)
 		{
-			printf("%d\n", inputBonds[i][j].atom1);
-			// inputBonds[i][j].atom1 = 0;
-			// inputBonds[i][j].atom2 = 0;
-			// inputBonds[i][j].atom3 = 0;
-			// inputBonds[i][j].atom4 = 0;
-			// inputBonds[i][j].atom5 = 0;
-			// inputBonds[i][j].atom6 = 0;
-		}
-
-		while (fgets (lineString, 2000, inputFile) != NULL)
-		{
-			if (strstr (lineString, "CONECT"))
-			{
-				sscanf (lineString, "%*s %d %*d %*d %*d %*d %*d %*d\n", &sino_local);
-				sscanf (lineString, "%*s %*d %d %d %d %d %d %d\n", 
-					&inputBonds[i][sino_local].atom1, 
-					&inputBonds[i][sino_local].atom2, 
-					&inputBonds[i][sino_local].atom3, 
-					&inputBonds[i][sino_local].atom4, 
-					&inputBonds[i][sino_local].atom5, 
-					&inputBonds[i][sino_local].atom6);
-			}
+			inputBonds[i][j].atom1 = 0;
+			inputBonds[i][j].atom2 = 0;
+			inputBonds[i][j].atom3 = 0;
+			inputBonds[i][j].atom4 = 0;
+			inputBonds[i][j].atom5 = 0;
+			inputBonds[i][j].atom6 = 0;
 		}
 
 		fclose (inputFile);
@@ -293,9 +266,6 @@ int main(int argc, char const *argv[])
 	// Create variables to store atom coordinates and bond connectivity information
 	COORDINATES **inputCoordinates;
 	BONDS **inputBonds;
-
-	inputCoordinates = assigningMemory_atoms (inputCoordinates, nSurfactants, inputStructures);
-	inputBonds = assigningMemory_bonds (inputBonds, nSurfactants, inputStructures);
 
 	/*
 		COORDINATES:
