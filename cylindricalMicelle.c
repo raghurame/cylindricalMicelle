@@ -66,25 +66,141 @@ FARTHESTPOINTS *calculateFarPoints (FARTHESTPOINTS *inputStructures_farPoints, C
 	return inputStructures_farPoints;
 }
 
-CENTEROFMASS *computeCOM (COORDINATES *inputCoordinates, int nSurfactants, SURFACTANT inputStructures)
+CENTEROFMASS *computeCOM (COORDINATES **inputCoordinates, int nSurfactants, SURFACTANT *inputStructures)
 {
 	CENTEROFMASS *comForMolecules;
 	comForMolecules = (CENTEROFMASS *) malloc (nSurfactants * sizeof (CENTEROFMASS));
 
-	
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		// Resetting the x, y, z values, which will be incremented later
+		comForMolecules[i].x = 0;
+		comForMolecules[i].y = 0;
+		comForMolecules[i].z = 0;
+
+		for (int j = 0; j < inputStructures[i].nAtoms; ++j)
+		{
+			comForMolecules[i].x += inputCoordinates[i][j].x;
+			comForMolecules[i].y += inputCoordinates[i][j].y;
+			comForMolecules[i].z += inputCoordinates[i][j].z;
+		}
+
+		comForMolecules[i].x /= inputStructures[i].nAtoms;
+		comForMolecules[i].y /= inputStructures[i].nAtoms;
+		comForMolecules[i].z /= inputStructures[i].nAtoms;
+	}
 
 	return comForMolecules;
 }
 
+COORDINATES **translateCoordinates (COORDINATES **inputCoordinates, int nSurfactants, SURFACTANT *inputStructures, CENTEROFMASS *comForMolecules, FARTHESTPOINTS *inputStructures_farPoints)
+{
+	CARTESIAN location_farPoint1;
+	int sino1_local;
+
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		// Calculate the distance between far point-1 and the center of mass
+		sino1_local = inputStructures_farPoints[i].sino1;
+		location_farPoint1.x = inputCoordinates[i][sino1_local].x;
+		location_farPoint1.y = inputCoordinates[i][sino1_local].y;
+		location_farPoint1.z = inputCoordinates[i][sino1_local].z;
+		// distanceFromCOM.x = inputCoordinates[i][sino1_local].x - comForMolecules[i].x;
+		// distanceFromCOM.y = inputCoordinates[i][sino1_local].y - comForMolecules[i].y;
+		// distanceFromCOM.z = inputCoordinates[i][sino1_local].z - comForMolecules[i].z;
+
+		// Translate all atoms based on the above calculated distance
+
+		for (int j = 0; j < inputStructures[i].nAtoms; ++j)
+		{
+			inputCoordinates[i][j].x -= location_farPoint1.x;
+			inputCoordinates[i][j].y -= location_farPoint1.y;
+			inputCoordinates[i][j].z -= location_farPoint1.z;
+		}
+	}
+
+	return inputCoordinates;
+}
+
+COORDINATES **alignMolecule (COORDINATES **inputCoordinates, int nSurfactants, SURFACTANT *inputStructures, FARTHESTPOINTS *inputStructures_farPoints)
+{
+	// vector 1 is from sino1 and sino2 of the farthest points.
+	// vector 2 is vectorX, which is a unit vector along X axis.
+	// Find the angle between the two vectors.
+	// Then rotate the molecule by the same angle, but in negative side.
+	float x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, dotProduct, magnitude1, magnitude2, cosTheta, theta;
+
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		x1 = inputStructures_farPoints[i].x1;
+		y1 = inputStructures_farPoints[i].y1;
+		z1 = inputStructures_farPoints[i].z1;
+
+		x2 = inputStructures_farPoints[i].x2;
+		y2 = inputStructures_farPoints[i].y2;
+		z2 = inputStructures_farPoints[i].z2;
+
+		x3 = 0;
+		y3 = 0;
+		z3 = 0;
+
+		x4 = 1;
+		y4 = 0;
+		z4 = 0;
+
+		// Finding angle in XY plane
+		dotProduct = ((x2 - x1) * (x4 - x3)) + ((y2 - y1) * (y4 - y3));
+		magnitude1 = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)); 
+		magnitude2 = ((x4 - x3) * (x4 - x3)) + ((y4 - y3) * (y4 - y3)); 
+
+		cosTheta = dotProduct / (sqrt (magnitude1) * sqrt (magnitude2));
+		theta = acosf (cosTheta);
+
+		// Aligning the molecule along XY plane
+		// Not modifying the Z values
+		for (int j = 0; j < inputStructures[i].nAtoms; ++j)
+		{
+			printf("mol %d: %.2f, %.2f --> ", i, inputCoordinates[i][j].x, inputCoordinates[i][j].y);
+			inputCoordinates[i][j].x = (inputCoordinates[i][j].x * cosf (theta)) - (inputCoordinates[i][j].y * sinf (theta));
+			inputCoordinates[i][j].y = (inputCoordinates[i][j].x * sinf (theta)) - (inputCoordinates[i][j].y * cosf (theta));
+			printf("%.2f, %.2f\n", inputCoordinates[i][j].x, inputCoordinates[i][j].y);
+		}
+
+		// Finding angle in XZ plane
+		dotProduct = ((x2 - x1) * (x4 - x3)) + ((z2 - z1) * (z4 - z3));
+		magnitude1 = ((x2 - x1) * (x2 - x1)) + ((z2 - z1) * (z2 - z1)); 
+		magnitude2 = ((x4 - x3) * (x4 - x3)) + ((z4 - z3) * (z4 - z3)); 
+
+		cosTheta = dotProduct / (sqrt (magnitude1) * sqrt (magnitude2));
+		theta = acosf (cosTheta);
+
+		// Aligning the molecule along XZ plane
+		// Here Y values are not modified
+		for (int j = 0; j < inputStructures[i].nAtoms; ++j)
+		{
+			inputCoordinates[i][j].x = (inputCoordinates[i][j].x * cosf (theta)) - (inputCoordinates[i][j].z * sinf (theta));
+			inputCoordinates[i][j].z = (inputCoordinates[i][j].x * sinf (theta)) - (inputCoordinates[i][j].z * cosf (theta));
+		}
+	}
+
+	return inputCoordinates;
+}
+
 COORDINATES **orientSurfactants (COORDINATES **inputCoordinates, int nSurfactants, SURFACTANT *inputStructures, FARTHESTPOINTS *inputStructures_farPoints)
 {
-	// This function should do the following
-	// Center the surfactant molecule. Keep one point as (0, 0, 0)
-	// Find the angle between the vector and X axis in XY/XZ planes
-	// Separately rotate the vector on XY/XZ planes
-
 	CENTEROFMASS *comForMolecules;
 	comForMolecules = computeCOM (inputCoordinates, nSurfactants, inputStructures); // assuming all atoms have same mass
+
+	// Printing the center of mass for each molecule
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		printf("center of mass for mol: %d => %f %f %f\n", i + 1, comForMolecules[i].x, comForMolecules[i].y, comForMolecules[i].z);
+	}
+
+	inputCoordinates = translateCoordinates (inputCoordinates, nSurfactants, inputStructures, comForMolecules, inputStructures_farPoints);
+
+	// Aligning the molecule
+	inputCoordinates = alignMolecule (inputCoordinates, nSurfactants, inputStructures, inputStructures_farPoints);
 
 	return inputCoordinates;
 }
@@ -113,8 +229,6 @@ int main(int argc, char const *argv[])
 	inputBonds = readBonds (inputBonds, nSurfactants, inputStructures);
 
 	/*
-	Find two farthest points in every molecule
-	Orient the chain along X axis using these two points.
 	Pack them in some lattice for now (later, pack them in micelle structure)
 	While packing them in lattice structure, don't worry about packing factor. Just maintain some tolerance
 	Later, while packing the moleules in a micelle structure, think about implementing soft repulsive potential and energy minimization.
@@ -126,6 +240,12 @@ int main(int argc, char const *argv[])
 	inputStructures_farPoints = calculateFarPoints (inputStructures_farPoints, inputCoordinates, nSurfactants, inputStructures);
 
 	inputCoordinates = orientSurfactants (inputCoordinates, nSurfactants, inputStructures, inputStructures_farPoints);
+
+	// Find the longest dimension on X, Y, and Z
+
+	// Replicate the molecule (coordinates and bonds)
+
+	// Save the above information as *.car and *.mdf files
 
 	free (inputStructures);
 	fclose (readConfig);
