@@ -173,28 +173,42 @@ COORDINATES **readCoordinates (COORDINATES **inputCoordinates, int nSurfactants,
 
 	for (int i = 0; i < nSurfactants; ++i)
 	{
+		sino_local = 0;
 		FILE *inputFile;
 		inputFile = fopen (inputStructures[i].filename, "r");
+
+		char atomName1_temp[5], molName_temp[5], atomName2_temp[5];
+		int col5_temp;
+		float x_temp, y_temp, z_temp, col9_temp, col10_temp;
 
 		printf("Opening %s\n", inputStructures[i].filename);
 
 		while (fgets (lineString, 2000, inputFile) != NULL)
 		{
-			// This is not counting for all the lines in DDAB. Check the follwing using printf statements
 			if (strstr (lineString, "ATOM") || strstr (lineString, "HETATM"))
 			{
-				sscanf (lineString, "%*s %d %*s %*s %*d %*f %*f %*f %*f %*f %*s\n", &sino_local);
-				sscanf (lineString, "%*s %d %s %s %d %f %f %f %f %f %s\n", 
-					&inputCoordinates[i][sino_local].sino, 
-					&inputCoordinates[i][sino_local].atomName1, 
-					&inputCoordinates[i][sino_local].molName, 
-					&inputCoordinates[i][sino_local].col5, 
-					&inputCoordinates[i][sino_local].x, 
-					&inputCoordinates[i][sino_local].y, 
-					&inputCoordinates[i][sino_local].z, 
-					&inputCoordinates[i][sino_local].col9, 
-					&inputCoordinates[i][sino_local].col10, 
-					&inputCoordinates[i][sino_local].atomName2);
+				sscanf (lineString, "%*s %*d %s %s %d %f %f %f %f %f %s\n", 
+					&atomName1_temp, 
+					&molName_temp, 
+					&col5_temp, 
+					&x_temp, 
+					&y_temp, 
+					&z_temp, 
+					&col9_temp, 
+					&col10_temp, 
+					&atomName2_temp);
+
+				strcpy (inputCoordinates[i][sino_local].atomName1, atomName1_temp);
+				strcpy (inputCoordinates[i][sino_local].molName, molName_temp);
+				inputCoordinates[i][sino_local].col5  = col5_temp;
+				inputCoordinates[i][sino_local].x  = x_temp;
+				inputCoordinates[i][sino_local].y  = y_temp;
+				inputCoordinates[i][sino_local].z  = z_temp;
+				inputCoordinates[i][sino_local].col9  = col9_temp;
+				inputCoordinates[i][sino_local].col10  = col10_temp;
+				strcpy (inputCoordinates[i][sino_local].atomName2, atomName2_temp);
+
+				sino_local++;
 			}
 		}
 
@@ -207,23 +221,18 @@ COORDINATES **readCoordinates (COORDINATES **inputCoordinates, int nSurfactants,
 BONDS **readBonds (BONDS **inputBonds, int nSurfactants, SURFACTANT *inputStructures)
 {
 	char lineString[2000];
-	int sino_local;
+	int sino_local = 0;
 
 	inputBonds = (BONDS **) malloc (nSurfactants * sizeof (BONDS *));
 
 	for (int i = 0; i < nSurfactants; ++i)
 	{
-		printf("Assigning %d mem (BONDS) for %s\n", inputStructures[i].nBonds, inputStructures[i].filename);
+		printf("Assigning %d mem (COORDINATES) for %s\n", inputStructures[i].nBonds, inputStructures[i].filename);
 		inputBonds[i] = (BONDS *) malloc (inputStructures[i].nBonds * sizeof (BONDS));
 	}
 
 	for (int i = 0; i < nSurfactants; ++i)
 	{
-		FILE *inputFile;
-		inputFile = fopen (inputStructures[i].filename, "r");
-
-		printf("Number of bonds in this surfactant: %d\n", inputStructures[i].nBonds);
-
 		for (int j = 0; j < inputStructures[i].nBonds; ++j)
 		{
 			inputBonds[i][j].atom1 = 0;
@@ -232,6 +241,35 @@ BONDS **readBonds (BONDS **inputBonds, int nSurfactants, SURFACTANT *inputStruct
 			inputBonds[i][j].atom4 = 0;
 			inputBonds[i][j].atom5 = 0;
 			inputBonds[i][j].atom6 = 0;
+		}
+	}
+
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		sino_local = 0;
+		FILE *inputFile;
+		inputFile = fopen (inputStructures[i].filename, "r");
+
+		char atomName1_temp[5], molName_temp[5], atomName2_temp[5];
+		int col5_temp;
+		float x_temp, y_temp, z_temp, col9_temp, col10_temp;
+
+		printf("Opening %s\n", inputStructures[i].filename);
+
+		while (fgets (lineString, 2000, inputFile) != NULL)
+		{
+			if (strstr (lineString, "CONECT"))
+			{
+				sscanf (lineString, "%*s %d %d %d %d %d %d\n", 
+					&inputBonds[i][sino_local].atom1,
+					&inputBonds[i][sino_local].atom2,
+					&inputBonds[i][sino_local].atom3,
+					&inputBonds[i][sino_local].atom4,
+					&inputBonds[i][sino_local].atom5,
+					&inputBonds[i][sino_local].atom6);
+
+				sino_local++;
+			}
 		}
 
 		fclose (inputFile);
@@ -242,7 +280,6 @@ BONDS **readBonds (BONDS **inputBonds, int nSurfactants, SURFACTANT *inputStruct
 
 int main(int argc, char const *argv[])
 {
-
 	checkArguments (argc);
 
 	FILE *readConfig;
@@ -281,6 +318,14 @@ int main(int argc, char const *argv[])
 
 	inputCoordinates = readCoordinates (inputCoordinates, nSurfactants, inputStructures);
 	inputBonds = readBonds (inputBonds, nSurfactants, inputStructures);
+
+	/*
+	Find two farthest points in every molecule
+	Orient the chain along X axis using these two points.
+	Pack them in some lattice for now (later, pack them in micelle structure)
+	While packing them in lattice structure, don't worry about packing factor. Just maintain some tolerance
+	Later, while packing the moleules in a micelle structure, think about implementing soft repulsive potential and energy minimization.
+	*/
 
 	free (inputStructures);
 	fclose (readConfig);
