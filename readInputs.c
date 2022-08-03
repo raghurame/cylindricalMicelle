@@ -196,7 +196,7 @@ BONDS **readBonds (BONDS **inputBonds, int nSurfactants, SURFACTANT *inputStruct
 
 	for (int i = 0; i < nSurfactants; ++i)
 	{
-		printf("Assigning %d mem (COORDINATES) for %s\n", inputStructures[i].nBonds, inputStructures[i].filename);
+		printf("Assigning %d mem (BONDS) for %s\n", inputStructures[i].nBonds, inputStructures[i].filename);
 		inputBonds[i] = (BONDS *) malloc (inputStructures[i].nBonds * sizeof (BONDS));
 	}
 

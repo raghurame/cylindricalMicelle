@@ -160,10 +160,10 @@ COORDINATES **alignMolecule (COORDINATES **inputCoordinates, int nSurfactants, S
 		// Not modifying the Z values
 		for (int j = 0; j < inputStructures[i].nAtoms; ++j)
 		{
-			printf("mol %d: %.2f, %.2f --> ", i, inputCoordinates[i][j].x, inputCoordinates[i][j].y);
+			// printf("mol %d: %.2f, %.2f --> ", i, inputCoordinates[i][j].x, inputCoordinates[i][j].y);
 			inputCoordinates[i][j].x = (inputCoordinates[i][j].x * cosf (theta)) - (inputCoordinates[i][j].y * sinf (theta));
 			inputCoordinates[i][j].y = (inputCoordinates[i][j].x * sinf (theta)) - (inputCoordinates[i][j].y * cosf (theta));
-			printf("%.2f, %.2f\n", inputCoordinates[i][j].x, inputCoordinates[i][j].y);
+			// printf("%.2f, %.2f\n", inputCoordinates[i][j].x, inputCoordinates[i][j].y);
 		}
 
 		// Finding angle in XZ plane
@@ -205,19 +205,39 @@ COORDINATES **orientSurfactants (COORDINATES **inputCoordinates, int nSurfactant
 	return inputCoordinates;
 }
 
-CARTESIAN computeLongestDimension (CARTESIAN *longestDimension, COORDINATES **inputCoordinates, int nSurfactants, SURFACTANT *inputStructures)
-{
-	longestDimension = (CARTESIAN *) malloc (nSurfactants * sizeof (CARTESIAN));
-
+void computeLongestDimension (CARTESIAN **loDimension, CARTESIAN **hiDimension, COORDINATES **inputCoordinates, int nSurfactants, SURFACTANT *inputStructures)
+{	
 	for (int i = 0; i < nSurfactants; ++i)
 	{
 		for (int j = 0; j < inputStructures[i].nAtoms; ++j)
 		{
-			
+			if (j == 0)
+			{
+				(*loDimension)[i].x = inputCoordinates[i][j].x;
+				(*hiDimension)[i].x = inputCoordinates[i][j].x;
+				(*loDimension)[i].y = inputCoordinates[i][j].y;
+				(*hiDimension)[i].y = inputCoordinates[i][j].y;
+				(*loDimension)[i].z = inputCoordinates[i][j].z;
+				(*hiDimension)[i].z = inputCoordinates[i][j].z;
+			}
+
+			if (inputCoordinates[i][j].x < (*loDimension)[i].x) (*loDimension)[i].x = inputCoordinates[i][j].x;
+			if (inputCoordinates[i][j].x > (*hiDimension)[i].x) (*hiDimension)[i].x = inputCoordinates[i][j].x;
+			if (inputCoordinates[i][j].y < (*loDimension)[i].y) (*loDimension)[i].y = inputCoordinates[i][j].y;
+			if (inputCoordinates[i][j].y > (*hiDimension)[i].y) (*hiDimension)[i].y = inputCoordinates[i][j].y;
+			if (inputCoordinates[i][j].z < (*loDimension)[i].z) (*loDimension)[i].z = inputCoordinates[i][j].z;
+			if (inputCoordinates[i][j].z > (*hiDimension)[i].z) (*hiDimension)[i].z = inputCoordinates[i][j].z;
 		}
 	}	
+}
 
-	return longestDimension;
+void replicateSurfactants (COORDINATES **inputCoordinates, COORDINATES ***outputCoordinates, BONDS **inputBonds, BONDS ***outputBonds, CARTESIAN *loDimension, hiDimension, nSurfactants, inputStructures)
+{
+	// Randomly pick a surfactant molecule.
+	// Once surfactant 'A' is picked, reduce the nMolecules by '1' quantity. 
+	// If nMolecules is already '0', then pick random number again, till an available surfactant is picked.
+	// Then move the randomly picked molecule to the target lattice location.
+	// Decide on the target lattice location based on 
 }
 
 int main(int argc, char const *argv[])
@@ -257,10 +277,17 @@ int main(int argc, char const *argv[])
 	inputCoordinates = orientSurfactants (inputCoordinates, nSurfactants, inputStructures, inputStructures_farPoints);
 
 	// Find the longest dimension on X, Y, and Z
-	CARTESIAN *longestDimension;
-	longestDimension = computeLongestDimension (longestDimension, inputCoordinates, nSurfactants, inputStructures);
+	CARTESIAN *loDimension, *hiDimension;
+	loDimension = (CARTESIAN *) malloc (nSurfactants * sizeof (CARTESIAN));
+	hiDimension = (CARTESIAN *) malloc (nSurfactants * sizeof (CARTESIAN));
+
+	computeLongestDimension (&loDimension, &hiDimension, inputCoordinates, nSurfactants, inputStructures);
 
 	// Replicate the molecule (coordinates and bonds)
+	COORDINATES **outputCoordinates;
+	BONDS **outputBonds;
+
+	replicateSurfactants (inputCoordinates, &outputCoordinates, inputBonds, &outputBonds, loDimension, hiDimension, nSurfactants, inputStructures);
 
 	// Save the above information as *.car and *.mdf files
 
