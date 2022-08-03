@@ -231,13 +231,25 @@ void computeLongestDimension (CARTESIAN **loDimension, CARTESIAN **hiDimension, 
 	}	
 }
 
-void replicateSurfactants (COORDINATES **inputCoordinates, COORDINATES ***outputCoordinates, BONDS **inputBonds, BONDS ***outputBonds, CARTESIAN *loDimension, hiDimension, nSurfactants, inputStructures)
+void replicateSurfactants (COORDINATES **inputCoordinates, COORDINATES ***outputCoordinates, BONDS **inputBonds, BONDS ***outputBonds, CARTESIAN *loDimension, CARTESIAN *hiDimension, int nSurfactants, SURFACTANT *inputStructures)
 {
 	// Randomly pick a surfactant molecule.
 	// Once surfactant 'A' is picked, reduce the nMolecules by '1' quantity. 
 	// If nMolecules is already '0', then pick random number again, till an available surfactant is picked.
 	// Then move the randomly picked molecule to the target lattice location.
-	// Decide on the target lattice location based on 
+	// Decide on the target lattice location based on tolerance distance between adjacent molecules.
+	srand(time(NULL));
+
+	double randomFlip;
+
+	for (int i = 0; i < 100; ++i)
+	{
+		randomFlip = rand ()/(double) RAND_MAX;
+		printf("%lf            \r", randomFlip);
+		fflush (stdout);
+		usleep (100000);
+	}
+
 }
 
 int main(int argc, char const *argv[])
