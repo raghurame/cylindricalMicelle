@@ -205,6 +205,21 @@ COORDINATES **orientSurfactants (COORDINATES **inputCoordinates, int nSurfactant
 	return inputCoordinates;
 }
 
+CARTESIAN computeLongestDimension (CARTESIAN *longestDimension, COORDINATES **inputCoordinates, int nSurfactants, SURFACTANT *inputStructures)
+{
+	longestDimension = (CARTESIAN *) malloc (nSurfactants * sizeof (CARTESIAN));
+
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		for (int j = 0; j < inputStructures[i].nAtoms; ++j)
+		{
+			
+		}
+	}	
+
+	return longestDimension;
+}
+
 int main(int argc, char const *argv[])
 {
 	checkArguments (argc);
@@ -242,6 +257,8 @@ int main(int argc, char const *argv[])
 	inputCoordinates = orientSurfactants (inputCoordinates, nSurfactants, inputStructures, inputStructures_farPoints);
 
 	// Find the longest dimension on X, Y, and Z
+	CARTESIAN *longestDimension;
+	longestDimension = computeLongestDimension (longestDimension, inputCoordinates, nSurfactants, inputStructures);
 
 	// Replicate the molecule (coordinates and bonds)
 
