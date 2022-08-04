@@ -255,30 +255,64 @@ int countTotalMolecules (SURFACTANT *inputStructures, int nSurfactants)
 	return totalMolecules;
 }
 
+MOLECULELOG *initializeAllMoleculesLog (MOLECULELOG *allMoleculeLog, SURFACTANT *inputStructures, int nSurfactants)
+{
+	int currentMolecule = 0;
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		for (int j = 0; j < inputStructures[i].nMolecules; ++j)
+		{
+			allMoleculeLog[currentMolecule].surfactantID = i;
+			allMoleculeLog[currentMolecule].fillStatus = 1; // Initializing with '1's
+			currentMolecule++;
+		}
+	}
+
+	return allMoleculeLog;
+}
+
+int findRemainingMolecules (MOLECULELOG *allMoleculeLog, SURFACTANT *inputStructures, int nSurfactants)
+{
+	int remainingMolecules = 0, currentMolecule = 0;
+
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		printf("%d\n", i);
+		for (int j = 0; j < inputStructures[i].nMolecules; ++j)
+		{
+			// printf("%d %d\n", allMoleculeLog[currentMolecule].surfactantID, allMoleculeLog[currentMolecule].fillStatus);
+			remainingMolecules += allMoleculeLog[currentMolecule].fillStatus;
+		}
+	}
+
+	sleep (10000);
+
+	return remainingMolecules;
+}
+
 void replicateSurfactants (COORDINATES **inputCoordinates, COORDINATES ***outputCoordinates, BONDS **inputBonds, BONDS ***outputBonds, CARTESIAN *loDimension, CARTESIAN *hiDimension, int nSurfactants, SURFACTANT *inputStructures)
 {
 	// Randomly pick a surfactant molecule.
-	// Once surfactant 'A' is picked, reduce the nMolecules by '1' quantity. 
+	// Once surfactant 'A' is picked, reduce the nMolecules by '1' quantity.
 	// If nMolecules is already '0', then pick random number again, till an available surfactant is picked.
 	// Then move the randomly picked molecule to the target lattice location.
 	// Decide on the target lattice location based on tolerance distance between adjacent molecules.
-	srand(time(NULL));
+	srand (time (NULL));
 
 	double randomFlip;
-	int totalAtoms = countTotalAtoms (inputStructures, nSurfactants), totalMolecules = countTotalMolecules (inputStructures, nSurfactants);
+	int totalAtoms = countTotalAtoms (inputStructures, nSurfactants), totalMolecules = countTotalMolecules (inputStructures, nSurfactants), remainingMolecules = totalMolecules;
 
 	MOLECULELOG *allMoleculeLog;
 	allMoleculeLog = (MOLECULELOG *) malloc (totalMolecules * sizeof (MOLECULELOG));
 
-	for (int i = 0; i < 100; ++i)
+	allMoleculeLog = initializeAllMoleculesLog (allMoleculeLog, inputStructures, nSurfactants);
+
+	for (int i = 0; i < totalMolecules; ++i)
 	{
 		randomFlip = rand ()/(double) RAND_MAX;
-		// This randomFlip will pick a molecule in random. Then it can be packed.
-		randomFlip *= (double) totalMolecules;
+		remainingMolecules = findRemainingMolecules (allMoleculeLog, inputStructures, nSurfactants);
+		randomFlip *= (double) remainingMolecules;
 		// printf("%d out of %d            \r", (int) randomFlip, totalMolecules);
-
-		fflush (stdout);
-		usleep (500000);
 	}
 
 }
