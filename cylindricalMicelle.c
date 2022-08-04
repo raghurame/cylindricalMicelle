@@ -277,30 +277,63 @@ int findRemainingMolecules (MOLECULELOG *allMoleculeLog, SURFACTANT *inputStruct
 
 	for (int i = 0; i < nSurfactants; ++i)
 	{
-		printf("%d\n", i);
 		for (int j = 0; j < inputStructures[i].nMolecules; ++j)
 		{
-			// printf("%d %d\n", allMoleculeLog[currentMolecule].surfactantID, allMoleculeLog[currentMolecule].fillStatus);
 			remainingMolecules += allMoleculeLog[currentMolecule].fillStatus;
+			currentMolecule++;
 		}
 	}
-
-	sleep (10000);
 
 	return remainingMolecules;
 }
 
-void replicateSurfactants (COORDINATES **inputCoordinates, COORDINATES ***outputCoordinates, BONDS **inputBonds, BONDS ***outputBonds, CARTESIAN *loDimension, CARTESIAN *hiDimension, int nSurfactants, SURFACTANT *inputStructures)
+MOLECULELOG *pickMolecule (MOLECULELOG *allMoleculeLog, SURFACTANT *inputStructures, int nSurfactants, double randomFlip, int *pickedSurfactantMolID)
+{
+	int currentMolecule = 0, currentUnselectedMolecule = 0;
+
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		for (int j = 0; j < inputStructures[i].nMolecules; ++j)
+		{
+			if (allMoleculeLog[currentMolecule].fillStatus == 1)
+			{
+				if (currentUnselectedMolecule == (int) randomFlip)
+				{
+					allMoleculeLog[currentMolecule].fillStatus = 0;
+					*pickedSurfactantMolID = allMoleculeLog[currentMolecule].surfactantID;
+				}
+				currentUnselectedMolecule++;
+			}
+			currentMolecule++;
+		}
+	}
+
+	return allMoleculeLog;
+}
+
+CARTESIAN computeMaxSurfactantLength (CARTESIAN maxSurfactantLenght, CARTESIAN globalSurfactantlo, CARTESIAN globalSurfactanthi)
+{
+	maxSurfactantLenght.x = globalSurfactanthi.x - globalSurfactantlo.x;
+	maxSurfactantLenght.y = globalSurfactanthi.y - globalSurfactantlo.y;
+	maxSurfactantLenght.z = globalSurfactanthi.z - globalSurfactantlo.z;
+
+	return maxSurfactantLenght;
+}
+
+void replicateSurfactants (COORDINATES **inputCoordinates, COORDINATES ***outputCoordinates, BONDS **inputBonds, BONDS ***outputBonds, CARTESIAN globalSurfactantlo, CARTESIAN globalSurfactanthi, int nSurfactants, SURFACTANT *inputStructures)
 {
 	// Randomly pick a surfactant molecule.
 	// Once surfactant 'A' is picked, reduce the nMolecules by '1' quantity.
 	// If nMolecules is already '0', then pick random number again, till an available surfactant is picked.
 	// Then move the randomly picked molecule to the target lattice location.
 	// Decide on the target lattice location based on tolerance distance between adjacent molecules.
+	CARTESIAN maxSurfactantLenght;
+	maxSurfactantLenght = computeMaxSurfactantLength (maxSurfactantLenght, globalSurfactantlo, globalSurfactanthi);
+
 	srand (time (NULL));
 
 	double randomFlip;
-	int totalAtoms = countTotalAtoms (inputStructures, nSurfactants), totalMolecules = countTotalMolecules (inputStructures, nSurfactants), remainingMolecules = totalMolecules;
+	int totalAtoms = countTotalAtoms (inputStructures, nSurfactants), totalMolecules = countTotalMolecules (inputStructures, nSurfactants), remainingMolecules = totalMolecules, pickedSurfactantMolID;
 
 	MOLECULELOG *allMoleculeLog;
 	allMoleculeLog = (MOLECULELOG *) malloc (totalMolecules * sizeof (MOLECULELOG));
@@ -312,9 +345,75 @@ void replicateSurfactants (COORDINATES **inputCoordinates, COORDINATES ***output
 		randomFlip = rand ()/(double) RAND_MAX;
 		remainingMolecules = findRemainingMolecules (allMoleculeLog, inputStructures, nSurfactants);
 		randomFlip *= (double) remainingMolecules;
-		// printf("%d out of %d            \r", (int) randomFlip, totalMolecules);
+
+		allMoleculeLog = pickMolecule (allMoleculeLog, inputStructures, nSurfactants, randomFlip, &pickedSurfactantMolID);
+		// printf("%d\n", pickedSurfactantMolID);
+
+		// We are picking a molecule ID from the previous step. 
+		// Use maxSurfactantLenght.x, maxSurfactantLenght.y, maxSurfactantLenght.z to replicate the coordinates.
+
+		// For the first iteration, don't translate the coordinates
+		if (i == 0)
+		{
+			for (int j = 0; j < nSurfactants; ++j)
+			{
+				for (int k = 0; k < inputStructures[j].nAtoms; ++k)
+				{
+					(*outputCoordinates).x = inputCoordinates[j][k].x;
+					(*outputCoordinates).y = inputCoordinates[j][k].y;
+					(*outputCoordinates).z = inputCoordinates[j][k].z;
+				}
+			}
+		}
+		else
+		{
+			// Translate along X, Y, Z
+			// Decide how to translate the molecules.
+			// How many molecules should be placed along X, Y, and Z axes?
+		}
 	}
 
+}
+
+void calculateGlobalMinMax (CARTESIAN *globalSurfactanthi, CARTESIAN *globalSurfactantlo, CARTESIAN *loDimension, CARTESIAN *hiDimension, int nSurfactants)
+{
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		if (i == 0)
+		{
+			(*globalSurfactanthi).x = hiDimension[i].x;
+			(*globalSurfactanthi).y = hiDimension[i].y;
+			(*globalSurfactanthi).z = hiDimension[i].z;
+
+			(*globalSurfactantlo).x = loDimension[i].x;
+			(*globalSurfactantlo).y = loDimension[i].y;
+			(*globalSurfactantlo).z = loDimension[i].z;
+		}
+		else
+		{
+			if (hiDimension[i].x > (*globalSurfactanthi).x) {
+				(*globalSurfactanthi).x = hiDimension[i].x; }
+			if (hiDimension[i].y > (*globalSurfactanthi).y) {
+				(*globalSurfactanthi).y = hiDimension[i].y; }
+			if (hiDimension[i].z > (*globalSurfactanthi).z) {
+				(*globalSurfactanthi).z = hiDimension[i].z; }
+
+			if (loDimension[i].x < (*globalSurfactantlo).x) {
+				(*globalSurfactantlo).x = loDimension[i].x; }
+			if (loDimension[i].y < (*globalSurfactantlo).y) {
+				(*globalSurfactantlo).y = loDimension[i].y; }
+			if (loDimension[i].z < (*globalSurfactantlo).z) {
+				(*globalSurfactantlo).z = loDimension[i].z; }
+		}
+	}
+
+	printf("\n\nMax dimensions (for all surfactants)\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nxlo: %.3f; xhi: %.3f\nylo: %.3f; yhi: %.3f\nzlo: %.3f; zhi: %.3f\n\n", 
+		(*globalSurfactantlo).x, 
+		(*globalSurfactanthi).x, 
+		(*globalSurfactantlo).y, 
+		(*globalSurfactanthi).y, 
+		(*globalSurfactantlo).z, 
+		(*globalSurfactanthi).z);
 }
 
 int main(int argc, char const *argv[])
@@ -354,11 +453,12 @@ int main(int argc, char const *argv[])
 	inputCoordinates = orientSurfactants (inputCoordinates, nSurfactants, inputStructures, inputStructures_farPoints);
 
 	// Find the longest dimension on X, Y, and Z
-	CARTESIAN *loDimension, *hiDimension;
+	CARTESIAN *loDimension, *hiDimension, globalSurfactantlo, globalSurfactanthi;
 	loDimension = (CARTESIAN *) malloc (nSurfactants * sizeof (CARTESIAN));
 	hiDimension = (CARTESIAN *) malloc (nSurfactants * sizeof (CARTESIAN));
 
 	computeLongestDimension (&loDimension, &hiDimension, inputCoordinates, nSurfactants, inputStructures);
+	calculateGlobalMinMax (&globalSurfactanthi, &globalSurfactantlo, loDimension, hiDimension, nSurfactants);
 
 	// Replicate the molecule (coordinates and bonds)
 	COORDINATES **outputCoordinates;
@@ -374,8 +474,7 @@ int main(int argc, char const *argv[])
 		outputBonds = (BONDS *) malloc (inputStructures[i].nAtoms * inputStructures[i].nMolecules * sizeof (BONDS));
 	}
 
-
-	replicateSurfactants (inputCoordinates, &outputCoordinates, inputBonds, &outputBonds, loDimension, hiDimension, nSurfactants, inputStructures);
+	replicateSurfactants (inputCoordinates, &outputCoordinates, inputBonds, &outputBonds, globalSurfactantlo, globalSurfactanthi, nSurfactants, inputStructures);
 
 	// Save the above information as *.car and *.mdf files
 
