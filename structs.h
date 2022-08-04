@@ -36,4 +36,9 @@ typedef struct cartesian
 	float x, y, z;
 } CARTESIAN;
 
+typedef struct molLog
+{
+	int surfactantID, fillStatus;
+} MOLECULELOG;
+
 #endif

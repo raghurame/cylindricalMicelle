@@ -231,6 +231,30 @@ void computeLongestDimension (CARTESIAN **loDimension, CARTESIAN **hiDimension, 
 	}	
 }
 
+int countTotalAtoms (SURFACTANT *inputStructures, int nSurfactants)
+{
+	int totalAtoms = 0;
+
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		totalAtoms += (inputStructures[i].nAtoms * inputStructures[i].nMolecules);
+	}
+
+	return totalAtoms;
+}
+
+int countTotalMolecules (SURFACTANT *inputStructures, int nSurfactants)
+{
+	int totalMolecules = 0;
+
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		totalMolecules += inputStructures[i].nMolecules;
+	}
+
+	return totalMolecules;
+}
+
 void replicateSurfactants (COORDINATES **inputCoordinates, COORDINATES ***outputCoordinates, BONDS **inputBonds, BONDS ***outputBonds, CARTESIAN *loDimension, CARTESIAN *hiDimension, int nSurfactants, SURFACTANT *inputStructures)
 {
 	// Randomly pick a surfactant molecule.
@@ -241,13 +265,20 @@ void replicateSurfactants (COORDINATES **inputCoordinates, COORDINATES ***output
 	srand(time(NULL));
 
 	double randomFlip;
+	int totalAtoms = countTotalAtoms (inputStructures, nSurfactants), totalMolecules = countTotalMolecules (inputStructures, nSurfactants);
+
+	MOLECULELOG *allMoleculeLog;
+	allMoleculeLog = (MOLECULELOG *) malloc (totalMolecules * sizeof (MOLECULELOG));
 
 	for (int i = 0; i < 100; ++i)
 	{
 		randomFlip = rand ()/(double) RAND_MAX;
-		printf("%lf            \r", randomFlip);
+		// This randomFlip will pick a molecule in random. Then it can be packed.
+		randomFlip *= (double) totalMolecules;
+		// printf("%d out of %d            \r", (int) randomFlip, totalMolecules);
+
 		fflush (stdout);
-		usleep (100000);
+		usleep (500000);
 	}
 
 }
@@ -298,6 +329,17 @@ int main(int argc, char const *argv[])
 	// Replicate the molecule (coordinates and bonds)
 	COORDINATES **outputCoordinates;
 	BONDS **outputBonds;
+
+	// Allocating memory
+	outputCoordinates = (COORDINATES **) malloc (nSurfactants * sizeof (COORDINATES *));
+	outputBonds = (BONDS **) malloc (nSurfactants * sizeof (BONDS *));
+
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		outputCoordinates = (COORDINATES *) malloc (inputStructures[i].nAtoms * inputStructures[i].nMolecules * sizeof (COORDINATES));
+		outputBonds = (BONDS *) malloc (inputStructures[i].nAtoms * inputStructures[i].nMolecules * sizeof (BONDS));
+	}
+
 
 	replicateSurfactants (inputCoordinates, &outputCoordinates, inputBonds, &outputBonds, loDimension, hiDimension, nSurfactants, inputStructures);
 
