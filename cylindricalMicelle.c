@@ -327,16 +327,20 @@ void replicateSurfactants (COORDINATES **inputCoordinates, COORDINATES ***output
 	// If nMolecules is already '0', then pick random number again, till an available surfactant is picked.
 	// Then move the randomly picked molecule to the target lattice location.
 	// Decide on the target lattice location based on tolerance distance between adjacent molecules.
+
+	// Finding the max surfactant length, to calculate the lattice positions for translations
 	CARTESIAN maxSurfactantLenght;
 	maxSurfactantLenght = computeMaxSurfactantLength (maxSurfactantLenght, globalSurfactantlo, globalSurfactanthi);
 
+	// Random picking of surfactant molecules
 	srand (time (NULL));
-
 	double randomFlip;
 	int totalAtoms = countTotalAtoms (inputStructures, nSurfactants), totalMolecules = countTotalMolecules (inputStructures, nSurfactants), remainingMolecules = totalMolecules, pickedSurfactantMolID;
 
 	MOLECULELOG *allMoleculeLog;
 	allMoleculeLog = (MOLECULELOG *) malloc (totalMolecules * sizeof (MOLECULELOG));
+
+	// Variables for creating surfactant lattice for translations
 
 	allMoleculeLog = initializeAllMoleculesLog (allMoleculeLog, inputStructures, nSurfactants);
 
