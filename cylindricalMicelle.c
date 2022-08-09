@@ -311,36 +311,35 @@ MOLECULELOG *pickMolecule (MOLECULELOG *allMoleculeLog, SURFACTANT *inputStructu
 	return allMoleculeLog;
 }
 
-CARTESIAN computeMaxSurfactantLength (CARTESIAN maxSurfactantLenght, CARTESIAN globalSurfactantlo, CARTESIAN globalSurfactanthi)
+CARTESIAN computeMaxSurfactantLength (CARTESIAN maxSurfactantLenght, CARTESIAN globalSurfactantlo, CARTESIAN globalSurfactanthi, float tolerance)
 {
-	maxSurfactantLenght.x = globalSurfactanthi.x - globalSurfactantlo.x;
-	maxSurfactantLenght.y = globalSurfactanthi.y - globalSurfactantlo.y;
-	maxSurfactantLenght.z = globalSurfactanthi.z - globalSurfactantlo.z;
+	maxSurfactantLenght.x = (globalSurfactanthi.x - globalSurfactantlo.x) + tolerance;
+	maxSurfactantLenght.y = (globalSurfactanthi.y - globalSurfactantlo.y) + tolerance;
+	maxSurfactantLenght.z = (globalSurfactanthi.z - globalSurfactantlo.z) + tolerance;
 
 	return maxSurfactantLenght;
 }
 
-void replicateSurfactants (COORDINATES **inputCoordinates, COORDINATES ***outputCoordinates, BONDS **inputBonds, BONDS ***outputBonds, CARTESIAN globalSurfactantlo, CARTESIAN globalSurfactanthi, int nSurfactants, SURFACTANT *inputStructures)
+COORDINATES *replicateSurfactants (COORDINATES **inputCoordinates, BONDS **inputBonds, CARTESIAN globalSurfactantlo, CARTESIAN globalSurfactanthi, int nSurfactants, SURFACTANT *inputStructures)
 {
-	// Randomly pick a surfactant molecule.
-	// Once surfactant 'A' is picked, reduce the nMolecules by '1' quantity.
-	// If nMolecules is already '0', then pick random number again, till an available surfactant is picked.
-	// Then move the randomly picked molecule to the target lattice location.
-	// Decide on the target lattice location based on tolerance distance between adjacent molecules.
+	COORDINATES *outputCoordinates;
 
 	// Finding the max surfactant length, to calculate the lattice positions for translations
-	CARTESIAN maxSurfactantLenght;
-	maxSurfactantLenght = computeMaxSurfactantLength (maxSurfactantLenght, globalSurfactantlo, globalSurfactanthi);
+	CARTESIAN maxSurfactantLenght; float tolerance = 2.0;
+	maxSurfactantLenght = computeMaxSurfactantLength (maxSurfactantLenght, globalSurfactantlo, globalSurfactanthi, tolerance);
 
 	// Random picking of surfactant molecules
 	srand (time (NULL));
 	double randomFlip;
 	int totalAtoms = countTotalAtoms (inputStructures, nSurfactants), totalMolecules = countTotalMolecules (inputStructures, nSurfactants), remainingMolecules = totalMolecules, pickedSurfactantMolID;
 
+	outputCoordinates = (COORDINATES *) malloc (totalAtoms * sizeof (COORDINATES));
+
 	MOLECULELOG *allMoleculeLog;
 	allMoleculeLog = (MOLECULELOG *) malloc (totalMolecules * sizeof (MOLECULELOG));
 
 	// Variables for creating surfactant lattice for translations
+	int nMoleculesPerSide = ceil (cbrt (totalMolecules)), currentLatticeInX = 0, currentLatticeInY = 0, currentLatticeInZ = 0, xIncrement = 0, yIncrement = 0, zIncrement = 0, currentAtom = 0;
 
 	allMoleculeLog = initializeAllMoleculesLog (allMoleculeLog, inputStructures, nSurfactants);
 
@@ -352,31 +351,43 @@ void replicateSurfactants (COORDINATES **inputCoordinates, COORDINATES ***output
 
 		allMoleculeLog = pickMolecule (allMoleculeLog, inputStructures, nSurfactants, randomFlip, &pickedSurfactantMolID);
 		// printf("%d\n", pickedSurfactantMolID);
+		// usleep (10000);
 
-		// We are picking a molecule ID from the previous step. 
-		// Use maxSurfactantLenght.x, maxSurfactantLenght.y, maxSurfactantLenght.z to replicate the coordinates.
+		for (int j = 0; j < inputStructures[pickedSurfactantMolID].nAtoms; ++j)
+		{
+			outputCoordinates[currentAtom].x = inputCoordinates[pickedSurfactantMolID][j].x + (maxSurfactantLenght.x * xIncrement);
+			outputCoordinates[currentAtom].y = inputCoordinates[pickedSurfactantMolID][j].y + (maxSurfactantLenght.y * yIncrement);
+			outputCoordinates[currentAtom].z = inputCoordinates[pickedSurfactantMolID][j].z + (maxSurfactantLenght.z * zIncrement);
+			outputCoordinates[currentAtom].sino = inputCoordinates[pickedSurfactantMolID][j].sino;
+			outputCoordinates[currentAtom].col5 = inputCoordinates[pickedSurfactantMolID][j].col5;
+			outputCoordinates[currentAtom].col9 = inputCoordinates[pickedSurfactantMolID][j].col9;
+			outputCoordinates[currentAtom].col10 = inputCoordinates[pickedSurfactantMolID][j].col10;
 
-		// For the first iteration, don't translate the coordinates
-		if (i == 0)
-		{
-			for (int j = 0; j < nSurfactants; ++j)
-			{
-				for (int k = 0; k < inputStructures[j].nAtoms; ++k)
-				{
-					(*outputCoordinates).x = inputCoordinates[j][k].x;
-					(*outputCoordinates).y = inputCoordinates[j][k].y;
-					(*outputCoordinates).z = inputCoordinates[j][k].z;
-				}
-			}
+			strncpy (outputCoordinates[currentAtom].atomName1, inputCoordinates[pickedSurfactantMolID][j].atomName1, 5);
+			strncpy (outputCoordinates[currentAtom].atomName2, inputCoordinates[pickedSurfactantMolID][j].atomName2, 5);
+			strncpy (outputCoordinates[currentAtom].molName, inputCoordinates[pickedSurfactantMolID][j].molName, 5);
+
+			if (currentAtom < totalAtoms) {
+				currentAtom++; }
 		}
-		else
-		{
-			// Translate along X, Y, Z
-			// Decide how to translate the molecules.
-			// How many molecules should be placed along X, Y, and Z axes?
-		}
+
+		// printf("%d %d %d %d\n", nMoleculesPerSide, xIncrement, yIncrement, zIncrement);
+		// fflush (stdout);
+		// usleep (100000);
+
+		if (xIncrement == (nMoleculesPerSide - 1)) {
+			xIncrement = 0;
+			yIncrement++; }
+		else if (xIncrement < (nMoleculesPerSide - 1)) {
+			xIncrement++; }
+
+		if (yIncrement == nMoleculesPerSide) {
+			xIncrement = 0;
+			yIncrement = 0;
+			zIncrement++; }
 	}
 
+	return outputCoordinates;
 }
 
 void calculateGlobalMinMax (CARTESIAN *globalSurfactanthi, CARTESIAN *globalSurfactantlo, CARTESIAN *loDimension, CARTESIAN *hiDimension, int nSurfactants)
@@ -465,20 +476,19 @@ int main(int argc, char const *argv[])
 	calculateGlobalMinMax (&globalSurfactanthi, &globalSurfactantlo, loDimension, hiDimension, nSurfactants);
 
 	// Replicate the molecule (coordinates and bonds)
-	COORDINATES **outputCoordinates;
-	BONDS **outputBonds;
+	COORDINATES *outputCoordinates;
+	BONDS *outputBonds;
 
-	// Allocating memory
-	outputCoordinates = (COORDINATES **) malloc (nSurfactants * sizeof (COORDINATES *));
-	outputBonds = (BONDS **) malloc (nSurfactants * sizeof (BONDS *));
+	outputCoordinates = replicateSurfactants (inputCoordinates, inputBonds, globalSurfactantlo, globalSurfactanthi, nSurfactants, inputStructures);
 
-	for (int i = 0; i < nSurfactants; ++i)
+	int totalAtoms = countTotalAtoms (inputStructures, nSurfactants);
+
+	for (int i = 0; i < totalAtoms; ++i)
 	{
-		outputCoordinates = (COORDINATES *) malloc (inputStructures[i].nAtoms * inputStructures[i].nMolecules * sizeof (COORDINATES));
-		outputBonds = (BONDS *) malloc (inputStructures[i].nAtoms * inputStructures[i].nMolecules * sizeof (BONDS));
+		printf("%f %f %f %s %s %s\n", outputCoordinates[i].x, outputCoordinates[i].y, outputCoordinates[i].z, outputCoordinates[i].atomName1, outputCoordinates[i].atomName2, outputCoordinates[i].molName);
+		fflush (stdout);
+		usleep (100000);
 	}
-
-	replicateSurfactants (inputCoordinates, &outputCoordinates, inputBonds, &outputBonds, globalSurfactantlo, globalSurfactanthi, nSurfactants, inputStructures);
 
 	// Save the above information as *.car and *.mdf files
 
