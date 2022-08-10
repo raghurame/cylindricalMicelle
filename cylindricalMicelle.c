@@ -444,7 +444,7 @@ BONDS *addBonds (COORDINATES *outputCoordinates, COORDINATES **inputCoordinates,
 
 	for (int i = 0; i < totalAtoms; ++i)
 	{
-		if (surfactantEnd < 1)
+		if (i > surfactantEnd)
 		{
 			for (int j = 0; j < nSurfactants; ++j)
 			{
@@ -453,15 +453,51 @@ BONDS *addBonds (COORDINATES *outputCoordinates, COORDINATES **inputCoordinates,
 					currentSurfactant = j;
 
 					surfactantBeginning = i;
-					surfactantEnd = surfactantBeginning + inputStructures[j].nAtoms;
+					surfactantEnd = surfactantBeginning + inputStructures[j].nAtoms - 1;
 				}
 			}
 		}
 
 
-		printf("i = %d belongs to surfactant %d (%s)                   \r", i, currentSurfactant + 1, outputCoordinates[i].molName);
-		fflush (stdout);
-		usleep (100000);
+		if (i <= surfactantEnd && i >= surfactantBeginning)
+		{
+			// printf("i = %d belongs to surfactant %d (%s)                   \r", i, currentSurfactant + 1, outputCoordinates[i].molName);
+			// printf("current atom in this surfactant: %d                       \r", i - surfactantBeginning);
+			if (inputBonds[currentSurfactant][i - surfactantBeginning].atom1 != 0) {
+				outputBonds[i].atom1 = inputBonds[currentSurfactant][i - surfactantBeginning].atom1 + surfactantBeginning; }
+			else {
+				outputBonds[i].atom1 = 0; }
+
+			if (inputBonds[currentSurfactant][i - surfactantBeginning].atom2 != 0) {
+				outputBonds[i].atom2 = inputBonds[currentSurfactant][i - surfactantBeginning].atom2 + surfactantBeginning; }
+			else {
+				outputBonds[i].atom2 = 0; }
+
+			if (inputBonds[currentSurfactant][i - surfactantBeginning].atom3 != 0) {
+				outputBonds[i].atom3 = inputBonds[currentSurfactant][i - surfactantBeginning].atom3 + surfactantBeginning; }
+			else {
+				outputBonds[i].atom3 = 0; }
+
+			if (inputBonds[currentSurfactant][i - surfactantBeginning].atom4 != 0) {
+				outputBonds[i].atom4 = inputBonds[currentSurfactant][i - surfactantBeginning].atom4 + surfactantBeginning; }
+			else {
+				outputBonds[i].atom4 = 0; }
+
+			if (inputBonds[currentSurfactant][i - surfactantBeginning].atom5 != 0) {
+				outputBonds[i].atom5 = inputBonds[currentSurfactant][i - surfactantBeginning].atom5 + surfactantBeginning; }
+			else {
+				outputBonds[i].atom5 = 0; }
+
+			if (inputBonds[currentSurfactant][i - surfactantBeginning].atom6 != 0) {
+				outputBonds[i].atom6 = inputBonds[currentSurfactant][i - surfactantBeginning].atom6 + surfactantBeginning; }
+			else {
+				outputBonds[i].atom6 = 0; }
+
+			// printf("%2d => %3d %3d %3d %3d %3d %3d\n", i+1, outputBonds[i].atom1, outputBonds[i].atom2, outputBonds[i].atom3, outputBonds[i].atom4, outputBonds[i].atom5, outputBonds[i].atom6);
+
+			// fflush (stdout);
+			// usleep (100000);
+		}
 	}
 
 	return outputBonds;
