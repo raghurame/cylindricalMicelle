@@ -431,6 +431,18 @@ void calculateGlobalMinMax (CARTESIAN *globalSurfactanthi, CARTESIAN *globalSurf
 		(*globalSurfactanthi).z);
 }
 
+BONDS *addBonds (COORDINATES *outputCoordinates, COORDINATES *inputCoordinates, BONDS *inputBonds, SURFACTANT *inputStructures, int nSurfactants)
+{
+	int totalAtoms = countTotalAtoms (inputStructures, nSurfactants);
+
+	BONDS *outputBonds;
+	outputBonds = (BONDS *) malloc (totalAtoms * sizeof (BONDS));
+
+	// Compare the molName between outputCoordinates and inputCoordinates. If the molName matches, then add bonds corresponding to the number of atoms in inputCoordinates. After that point, again compare the molName between outputCoordinates and inputCoordinates, then repeat the process multiple times.
+
+	return outputBonds;
+}
+
 int main(int argc, char const *argv[])
 {
 	checkArguments (argc);
@@ -454,12 +466,6 @@ int main(int argc, char const *argv[])
 	inputCoordinates = readCoordinates (inputCoordinates, nSurfactants, inputStructures);
 	inputBonds = readBonds (inputBonds, nSurfactants, inputStructures);
 
-	/*
-	Pack them in some lattice for now (later, pack them in micelle structure)
-	While packing them in lattice structure, don't worry about packing factor. Just maintain some tolerance
-	Later, while packing the moleules in a micelle structure, think about implementing soft repulsive potential and energy minimization.
-	*/
-
 	FARTHESTPOINTS *inputStructures_farPoints;
 	inputStructures_farPoints = (FARTHESTPOINTS *) malloc (nSurfactants * sizeof (FARTHESTPOINTS));
 
@@ -481,14 +487,16 @@ int main(int argc, char const *argv[])
 
 	outputCoordinates = replicateSurfactants (inputCoordinates, inputBonds, globalSurfactantlo, globalSurfactanthi, nSurfactants, inputStructures);
 
-	int totalAtoms = countTotalAtoms (inputStructures, nSurfactants);
+	// Testing printing all the coordinates
+	// int totalAtoms = countTotalAtoms (inputStructures, nSurfactants);
+	// for (int i = 0; i < totalAtoms; ++i)
+	// {
+	// 	printf("%f %f %f %s %s %s\n", outputCoordinates[i].x, outputCoordinates[i].y, outputCoordinates[i].z, outputCoordinates[i].atomName1, outputCoordinates[i].atomName2, outputCoordinates[i].molName);
+	// 	fflush (stdout);
+	// 	usleep (100000);
+	// }
 
-	for (int i = 0; i < totalAtoms; ++i)
-	{
-		printf("%f %f %f %s %s %s\n", outputCoordinates[i].x, outputCoordinates[i].y, outputCoordinates[i].z, outputCoordinates[i].atomName1, outputCoordinates[i].atomName2, outputCoordinates[i].molName);
-		fflush (stdout);
-		usleep (100000);
-	}
+	outputBonds = addBonds (outputCoordinates, inputCoordinates, inputBonds, inputStructures, nSurfactants);
 
 	// Save the above information as *.car and *.mdf files
 
