@@ -547,7 +547,7 @@ int main(int argc, char const *argv[])
 
 	outputCoordinates = replicateSurfactants (inputCoordinates, inputBonds, globalSurfactantlo, globalSurfactanthi, nSurfactants, inputStructures);
 
-	// Testing printing all the coordinates
+	// Testing results from replicateSurfactants function
 	// int totalAtoms = countTotalAtoms (inputStructures, nSurfactants);
 	// for (int i = 0; i < totalAtoms; ++i)
 	// {
@@ -557,6 +557,15 @@ int main(int argc, char const *argv[])
 	// }
 
 	outputBonds = addBonds (outputCoordinates, inputCoordinates, inputBonds, inputStructures, nSurfactants);
+
+	// Testing results from addBonds function
+	int totalAtoms = countTotalAtoms (inputStructures, nSurfactants);
+	for (int i = 0; i < totalAtoms; ++i)
+	{
+		printf("%3d %3d %3d %3d %3d %3d\n", outputBonds[i].atom1, outputBonds[i].atom2, outputBonds[i].atom3, outputBonds[i].atom4, outputBonds[i].atom5, outputBonds[i].atom6);
+		usleep (100000);
+		
+	}
 
 	// Save the above information as *.car and *.mdf files
 
