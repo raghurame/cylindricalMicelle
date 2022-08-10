@@ -431,7 +431,7 @@ void calculateGlobalMinMax (CARTESIAN *globalSurfactanthi, CARTESIAN *globalSurf
 		(*globalSurfactanthi).z);
 }
 
-BONDS *addBonds (COORDINATES *outputCoordinates, COORDINATES *inputCoordinates, BONDS *inputBonds, SURFACTANT *inputStructures, int nSurfactants)
+BONDS *addBonds (COORDINATES *outputCoordinates, COORDINATES **inputCoordinates, BONDS **inputBonds, SURFACTANT *inputStructures, int nSurfactants)
 {
 	int totalAtoms = countTotalAtoms (inputStructures, nSurfactants);
 
@@ -439,6 +439,30 @@ BONDS *addBonds (COORDINATES *outputCoordinates, COORDINATES *inputCoordinates, 
 	outputBonds = (BONDS *) malloc (totalAtoms * sizeof (BONDS));
 
 	// Compare the molName between outputCoordinates and inputCoordinates. If the molName matches, then add bonds corresponding to the number of atoms in inputCoordinates. After that point, again compare the molName between outputCoordinates and inputCoordinates, then repeat the process multiple times.
+
+	int currentSurfactant, surfactantBeginning = -1, surfactantEnd = -1;
+
+	for (int i = 0; i < totalAtoms; ++i)
+	{
+		if (surfactantEnd < 1)
+		{
+			for (int j = 0; j < nSurfactants; ++j)
+			{
+				if (strstr (outputCoordinates[i].molName, inputCoordinates[j][0].molName))
+				{
+					currentSurfactant = j;
+
+					surfactantBeginning = i;
+					surfactantEnd = surfactantBeginning + inputStructures[j].nAtoms;
+				}
+			}
+		}
+
+
+		printf("i = %d belongs to surfactant %d (%s)                   \r", i, currentSurfactant + 1, outputCoordinates[i].molName);
+		fflush (stdout);
+		usleep (100000);
+	}
 
 	return outputBonds;
 }
