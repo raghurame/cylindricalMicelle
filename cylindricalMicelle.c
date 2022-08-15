@@ -7,7 +7,7 @@
 #include "structs.h"
 #include "readInputs.h"
 #include "packing.h"
-#include "printOutput.h"
+// #include "printOutput.h"
 
 int main(int argc, char const *argv[])
 {
@@ -73,8 +73,8 @@ int main(int argc, char const *argv[])
 	// }
 
 	// Save the above information as *.car and *.mdf files
-	writeCar (outputCoordinates, totalAtoms, inputStructures, nSurfactants);
-	writeMdf (outputBonds, totalAtoms, inputStructures, nSurfactants);
+	// writeCar (outputCoordinates, totalAtoms, inputStructures, nSurfactants);
+	// writeMdf (outputBonds, totalAtoms, inputStructures, nSurfactants);
 
 	free (inputStructures);
 	fclose (readConfig);
