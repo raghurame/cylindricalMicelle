@@ -35,6 +35,9 @@ void writeMdf (COORDINATES *outputCoordinates, BONDS *outputBonds, int totalAtom
 		atomID4 = outputBonds[i].atom4;
 		atomID5 = outputBonds[i].atom5;
 
+		printf("%d %d %d %d\n", outputBonds[i].atom1, outputBonds[i].atom2, outputBonds[i].atom3, outputBonds[i].atom4, outputBonds[i].atom5);
+		usleep (100000);
+
 		fprintf(outputMDF, "XXXX_AF1:%s%-5d%5s%4s*%7s%6d%3d%11.4f%2d%2d%2d%7.4f%8.4f", outputCoordinates[i].atomName1, i, outputCoordinates[i].atomName1, outputCoordinates[i].atomName1, "?", 0, 0, outputCoordinates[i].col10, 0, 0, 8, 1.0, 0.0);
 
 		// Printing information about bonded atoms
@@ -48,6 +51,8 @@ void writeMdf (COORDINATES *outputCoordinates, BONDS *outputBonds, int totalAtom
 			fprintf(outputMDF, " %s%d ", outputCoordinates[atomID4 + 1].atomName1, atomID4 + 1); }
 		if (atomID5 > 0) {
 			fprintf(outputMDF, " %s%d ", outputCoordinates[atomID5 + 1].atomName1, atomID5 + 1); }
+
+		fprintf(outputMDF, "\n");
 	}
 
 	fclose (outputMDF);
