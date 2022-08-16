@@ -66,16 +66,16 @@ int main(int argc, char const *argv[])
 	outputBonds = addBonds (outputCoordinates, inputCoordinates, inputBonds, inputStructures, nSurfactants);
 
 	// Testing results from addBonds function
-	// for (int i = 0; i < totalAtoms; ++i)
-	// {
-	// 	printf("%3d %3d %3d %3d %3d %3d\n", outputBonds[i].atom1, outputBonds[i].atom2, outputBonds[i].atom3, outputBonds[i].atom4, outputBonds[i].atom5, outputBonds[i].atom6);
-	// 	fflush (stdout);
-	// 	usleep (100000);
-	// }
+	for (int i = 0; i < totalAtoms; ++i)
+	{
+		printf("%3d %3d %3d %3d %3d %3d\n", outputBonds[i].atom1, outputBonds[i].atom2, outputBonds[i].atom3, outputBonds[i].atom4, outputBonds[i].atom5, outputBonds[i].atom6);
+		fflush (stdout);
+		usleep (100000);
+	}
 
 	// Save the above information as *.car and *.mdf files
-	writeCar (outputCoordinates, totalAtoms, inputStructures, nSurfactants);
-	writeMdf (outputCoordinates, outputBonds, totalAtoms, inputStructures, nSurfactants);
+	// writeCar (outputCoordinates, totalAtoms, inputStructures, nSurfactants);
+	// writeMdf (outputCoordinates, outputBonds, totalAtoms, inputStructures, nSurfactants);
 
 	free (inputStructures);
 	fclose (readConfig);
