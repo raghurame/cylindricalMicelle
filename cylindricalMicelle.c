@@ -75,7 +75,7 @@ int main(int argc, char const *argv[])
 
 	// Save the above information as *.car and *.mdf files
 	writeCar (outputCoordinates, totalAtoms, inputStructures, nSurfactants);
-	writeMdf (outputBonds, totalAtoms, inputStructures, nSurfactants);
+	writeMdf (outputCoordinates, outputBonds, totalAtoms, inputStructures, nSurfactants);
 
 	free (inputStructures);
 	fclose (readConfig);
