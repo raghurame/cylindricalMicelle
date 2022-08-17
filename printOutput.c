@@ -17,30 +17,23 @@ void computeOutputBounds (CARTESIAN *lowerBounds, CARTESIAN *upperBounds, COORDI
 			(*lowerBounds).x = outputCoordinates[i].x; (*lowerBounds).y = outputCoordinates[i].y; (*lowerBounds).z = outputCoordinates[i].z; (*upperBounds).x = outputCoordinates[i].x; (*upperBounds).y = outputCoordinates[i].y; (*upperBounds).z = outputCoordinates[i].z; }
 		else
 		{
-			if (outputCoordinates[i].x < (*lowerBounds).x)
-			{
-				(*lowerBounds).x = outputCoordinates[i].x;
-			}
-			if (outputCoordinates[i].x > (*upperBounds).x)
-			{
-				(*upperBounds).x = outputCoordinates[i].x;
-			}
-			if (outputCoordinates[i].y < (*lowerBounds).y)
-			{
-				(*lowerBounds).y = outputCoordinates[i].y;
-			}
-			if (outputCoordinates[i].y > (*upperBounds).y)
-			{
-				(*upperBounds).y = outputCoordinates
-			}
-			if (outputCoordinates[i].z < (*lowerBounds).z)
-			{
-				/* code */
-			}
-			if (outputCoordinates[i].z > (*upperBounds).z)
-			{
-				/* code */
-			}
+			if (outputCoordinates[i].x < (*lowerBounds).x) {
+				(*lowerBounds).x = outputCoordinates[i].x; }
+
+			if (outputCoordinates[i].x > (*upperBounds).x) {
+				(*upperBounds).x = outputCoordinates[i].x; }
+
+			if (outputCoordinates[i].y < (*lowerBounds).y) {
+				(*lowerBounds).y = outputCoordinates[i].y; }
+
+			if (outputCoordinates[i].y > (*upperBounds).y) {
+				(*upperBounds).y = outputCoordinates[i].y; }
+
+			if (outputCoordinates[i].z < (*lowerBounds).z) {
+				(*lowerBounds).z = outputCoordinates[i].z; }
+
+			if (outputCoordinates[i].z > (*upperBounds).z) {
+				(*upperBounds).z = outputCoordinates[i].z; }
 		}
 	}
 }
@@ -54,7 +47,7 @@ void writeCar (COORDINATES *outputCoordinates, int totalAtoms, SURFACTANT *input
 
 	computeOutputBounds (&lowerBounds, &upperBounds, outputCoordinates, totalAtoms);
 
-	fprintf(outputCAR, "!BIOSYM archive 3\nPBC=ON\nMaterials Studio Generated CAR File\n!DATE Mon Nov 26 21:42:01 2012\nPBC   50.0000   50.0000   53.9263   90.0000   90.0000   90.0000 (P1)\n");
+	fprintf(outputCAR, "!BIOSYM archive 3\nPBC=ON\nMaterials Studio Generated CAR File\n!DATE Mon Nov 26 21:42:01 2012\nPBC   %.4f   %.4f   %.4f   %.4f   %.4f   %.4f (P1)\n", lowerBounds.x, lowerBounds.y, lowerBounds.z, upperBounds.x, upperBounds.y, upperBounds.z);
 
 	for (int i = 0; i < totalAtoms; ++i) {
 		fprintf(outputCAR, "%s%-5d%14.9f%14.9f%14.9f XXXX AF1%6s*%7s%8.3f\n", outputCoordinates[i].atomName1, i, outputCoordinates[i].x, outputCoordinates[i].y, outputCoordinates[i].z, outputCoordinates[i].atomName1, outputCoordinates[i].atomName1, outputCoordinates[i].col10); }
