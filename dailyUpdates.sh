@@ -10,5 +10,7 @@ git add CTAB.pdb.charges
 git add DDAB.pdb.charges
 git add printOutput.c
 git add printOutput.h
+git add CTAB.pdb
+git add DDAB.pdb
 git commit -m "daily updates"
 git push
