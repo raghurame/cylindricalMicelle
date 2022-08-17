@@ -336,7 +336,7 @@ COORDINATES *replicateSurfactants (COORDINATES **inputCoordinates, BONDS **input
 
 		allMoleculeLog = pickMolecule (allMoleculeLog, inputStructures, nSurfactants, randomFlip, &pickedSurfactantMolID);
 		// printf("%d\n", pickedSurfactantMolID);
-		// usleep (10000);
+		// usleep (100000);
 
 		for (int j = 0; j < inputStructures[pickedSurfactantMolID].nAtoms; ++j)
 		{
@@ -425,7 +425,7 @@ BONDS *addBonds (COORDINATES *outputCoordinates, COORDINATES **inputCoordinates,
 
 	// Compare the molName between outputCoordinates and inputCoordinates. If the molName matches, then add bonds corresponding to the number of atoms in inputCoordinates. After that point, again compare the molName between outputCoordinates and inputCoordinates, then repeat the process multiple times.
 
-	int currentSurfactant, surfactantBeginning = -1, surfactantEnd = -1;
+	int currentSurfactant, surfactantBeginning = -1, surfactantEnd = -1, surfactantEnd_previous = -1;
 
 	for (int i = 0; i < totalAtoms; ++i)
 	{
@@ -438,6 +438,9 @@ BONDS *addBonds (COORDINATES *outputCoordinates, COORDINATES **inputCoordinates,
 					currentSurfactant = j;
 
 					surfactantBeginning = i;
+
+					surfactantEnd_previous = surfactantEnd;
+
 					surfactantEnd = surfactantBeginning + inputStructures[j].nAtoms - 1;
 				}
 			}
@@ -449,36 +452,49 @@ BONDS *addBonds (COORDINATES *outputCoordinates, COORDINATES **inputCoordinates,
 			// printf("i = %d belongs to surfactant %d (%s)                   \r", i, currentSurfactant + 1, outputCoordinates[i].molName);
 			// printf("current atom in this surfactant: %d                       \r", i - surfactantBeginning);
 			if (inputBonds[currentSurfactant][i - surfactantBeginning].atom1 != 0) {
-				outputBonds[i].atom1 = inputBonds[currentSurfactant][i - surfactantBeginning].atom1 + surfactantBeginning; }
+				outputBonds[i].atom1 = inputBonds[currentSurfactant][i - surfactantBeginning].atom1 + surfactantBeginning; 
+				// printf("%d, %s, %d, %d, %d\n", i, "atom1", outputBonds[i].atom1, (surfactantBeginning - 1), totalAtoms); 
+			}
 			else {
 				outputBonds[i].atom1 = 0; }
 
 			if (inputBonds[currentSurfactant][i - surfactantBeginning].atom2 != 0) {
-				outputBonds[i].atom2 = inputBonds[currentSurfactant][i - surfactantBeginning].atom2 + surfactantBeginning; }
+				outputBonds[i].atom2 = inputBonds[currentSurfactant][i - surfactantBeginning].atom2 + surfactantBeginning; 
+				// printf("%d, %s, %d, %d, %d\n", i, "atom2", outputBonds[i].atom2, (surfactantBeginning - 1), totalAtoms); 
+			}
 			else {
 				outputBonds[i].atom2 = 0; }
 
 			if (inputBonds[currentSurfactant][i - surfactantBeginning].atom3 != 0) {
-				outputBonds[i].atom3 = inputBonds[currentSurfactant][i - surfactantBeginning].atom3 + surfactantBeginning; }
+				outputBonds[i].atom3 = inputBonds[currentSurfactant][i - surfactantBeginning].atom3 + surfactantBeginning; 
+				// printf("%d, %s, %d, %d, %d\n", i, "atom3", outputBonds[i].atom3, (surfactantBeginning - 1), totalAtoms); 
+			}
 			else {
 				outputBonds[i].atom3 = 0; }
 
 			if (inputBonds[currentSurfactant][i - surfactantBeginning].atom4 != 0) {
-				outputBonds[i].atom4 = inputBonds[currentSurfactant][i - surfactantBeginning].atom4 + surfactantBeginning; }
+				outputBonds[i].atom4 = inputBonds[currentSurfactant][i - surfactantBeginning].atom4 + surfactantBeginning; 
+				// printf("%d, %s, %d, %d, %d\n", i, "atom4", outputBonds[i].atom4, (surfactantBeginning - 1), totalAtoms); 
+			}
 			else {
 				outputBonds[i].atom4 = 0; }
 
 			if (inputBonds[currentSurfactant][i - surfactantBeginning].atom5 != 0) {
-				outputBonds[i].atom5 = inputBonds[currentSurfactant][i - surfactantBeginning].atom5 + surfactantBeginning; }
+				outputBonds[i].atom5 = inputBonds[currentSurfactant][i - surfactantBeginning].atom5 + surfactantBeginning; 
+				// printf("%d, %s, %d, %d, %d\n", i, "atom5", outputBonds[i].atom5, (surfactantBeginning - 1), totalAtoms); 
+			}
 			else {
 				outputBonds[i].atom5 = 0; }
 
 			if (inputBonds[currentSurfactant][i - surfactantBeginning].atom6 != 0) {
-				outputBonds[i].atom6 = inputBonds[currentSurfactant][i - surfactantBeginning].atom6 + surfactantBeginning; }
+				outputBonds[i].atom6 = inputBonds[currentSurfactant][i - surfactantBeginning].atom6 + surfactantBeginning; 
+				// printf("%d, %s, %d, %d, %d\n", i, "atom6", outputBonds[i].atom6, (surfactantBeginning - 1), totalAtoms); 
+			}
 			else {
 				outputBonds[i].atom6 = 0; }
 
 			// printf("%2d => %3d %3d %3d %3d %3d %3d\n", i+1, outputBonds[i].atom1, outputBonds[i].atom2, outputBonds[i].atom3, outputBonds[i].atom4, outputBonds[i].atom5, outputBonds[i].atom6);
+			// printf("%d\n", totalAtoms);
 
 			// fflush (stdout);
 			// usleep (100000);

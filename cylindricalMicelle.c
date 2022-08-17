@@ -18,6 +18,7 @@ int main(int argc, char const *argv[])
 	readConfig = fopen (argv[1], "r");
 
 	int nSurfactants = checkNSurfactants (readConfig);
+	printf("Number of surfactant molecules: %d\n", nSurfactants);
 
 	SURFACTANT *inputStructures;
 	inputStructures = (SURFACTANT *) malloc (nSurfactants * sizeof (SURFACTANT));
@@ -25,6 +26,13 @@ int main(int argc, char const *argv[])
 	inputStructures = storeSurfactantInformation (inputStructures, nSurfactants, readConfig);
 	inputStructures = getNAtoms (inputStructures, nSurfactants);
 	inputStructures = getNBonds (inputStructures, nSurfactants);
+
+	/* Printing the number of atoms for each surfactant */
+	// for (int i = 0; i < nSurfactants; ++i)
+	// {
+	// 	printf("Number of atoms in surfactant %d: %d\n", i + 1, inputStructures[i].nAtoms);
+	// }
+	// exit (1);
 
 	// Create variables to store atom coordinates and bond connectivity information
 	COORDINATES **inputCoordinates;
@@ -59,9 +67,10 @@ int main(int argc, char const *argv[])
 	// for (int i = 0; i < totalAtoms; ++i)
 	// {
 	// 	printf("%f %f %f %s %s %s\n", outputCoordinates[i].x, outputCoordinates[i].y, outputCoordinates[i].z, outputCoordinates[i].atomName1, outputCoordinates[i].atomName2, outputCoordinates[i].molName);
-	// 	fflush (stdout);
-	// 	usleep (100000);
+	// 	// fflush (stdout);
+	// 	// usleep (10000);
 	// }
+	// exit (1);
 
 	outputBonds = addBonds (outputCoordinates, inputCoordinates, inputBonds, inputStructures, nSurfactants);
 
