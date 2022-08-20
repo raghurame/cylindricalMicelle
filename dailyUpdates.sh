@@ -14,5 +14,8 @@ git add CTAB.pdb
 git add DDAB.pdb
 git add finalStructure.car
 git add finalStructure.mdf
+git add cvff.frc
+git add pcff.frc
+git add msi2lmp_gcc32.exe
 git commit -m "daily updates"
 git push
