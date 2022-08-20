@@ -12,5 +12,7 @@ git add printOutput.c
 git add printOutput.h
 git add CTAB.pdb
 git add DDAB.pdb
+git add finalStructure.car
+git add finalStructure.mdf
 git commit -m "daily updates"
 git push
