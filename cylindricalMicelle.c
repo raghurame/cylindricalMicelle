@@ -85,6 +85,7 @@ int main(int argc, char const *argv[])
 	// Save the above information as *.car and *.mdf files
 	writeCar (outputCoordinates, totalAtoms, inputStructures, nSurfactants);
 	writeMdf (outputCoordinates, outputBonds, totalAtoms, inputStructures, nSurfactants);
+	system ("./msi2lmp_gcc32.exe finalStructure");
 
 	free (inputStructures);
 	fclose (readConfig);

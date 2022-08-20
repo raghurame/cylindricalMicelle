@@ -1,3 +1,4 @@
+git add input.config
 git add cylindricalMicelle.c
 git add packing.c
 git add packing.h
