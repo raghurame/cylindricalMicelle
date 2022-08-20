@@ -47,10 +47,11 @@ void writeCar (COORDINATES *outputCoordinates, int totalAtoms, SURFACTANT *input
 
 	computeOutputBounds (&lowerBounds, &upperBounds, outputCoordinates, totalAtoms);
 
-	fprintf(outputCAR, "!BIOSYM archive 3\nPBC=ON\nMaterials Studio Generated CAR File\n!DATE Mon Nov 26 21:42:01 2012\nPBC   %.4f   %.4f   %.4f   %.4f   %.4f   %.4f (P1)\n", lowerBounds.x, lowerBounds.y, lowerBounds.z, upperBounds.x, upperBounds.y, upperBounds.z);
+	// fprintf(outputCAR, "!BIOSYM archive 3\nPBC=ON\nMaterials Studio Generated CAR File\n!DATE Mon Nov 26 21:42:01 2012\nPBC   %.4f   %.4f   %.4f   %.4f   %.4f   %.4f (P1)\n", lowerBounds.x - (0.1 * lowerBounds.x), lowerBounds.y - (0.1 * lowerBounds.y), lowerBounds.z - (0.1 * lowerBounds.z), upperBounds.x + (0.1 * upperBounds.x), upperBounds.y + (0.1 * upperBounds.y), upperBounds.z + (0.1 * upperBounds.z));
+	fprintf(outputCAR, "!BIOSYM archive 3\nPBC=OFF\nMaterials Studio Generated CAR File\n!DATE Mon Nov 26 21:42:01 2012\n");
 
 	for (int i = 0; i < totalAtoms; ++i) {
-		fprintf(outputCAR, "%s%-5d%14.9f%14.9f%14.9f XXXX 1%6s*%7s%8.3f\n", outputCoordinates[i].atomName1, (i + 1), outputCoordinates[i].x, outputCoordinates[i].y, outputCoordinates[i].z, outputCoordinates[i].atomName1, outputCoordinates[i].atomName1, outputCoordinates[i].col10); }
+		fprintf(outputCAR, "%s%-5d%14.9f%14.9f%14.9f XXXX 1%6s%7s%8.3f\n", outputCoordinates[i].atomName1, (i + 1), outputCoordinates[i].x, outputCoordinates[i].y, outputCoordinates[i].z, outputCoordinates[i].atomName2, outputCoordinates[i].atomName1, outputCoordinates[i].col10); }
 
 	fprintf(outputCAR, "end\nend\n");
 
@@ -77,7 +78,7 @@ void writeMdf (COORDINATES *outputCoordinates, BONDS *outputBonds, int totalAtom
 		// printf("%d %d %d %d %d (%d)\n", outputBonds[i].atom1, outputBonds[i].atom2, outputBonds[i].atom3, outputBonds[i].atom4, outputBonds[i].atom5, totalAtoms);
 		// usleep (100000);
 
-		fprintf(outputMDF, "XXXX_1:%s%-5d%5s%4s*%7s%6d%3d%11.4f%2d%2d%2d%7.4f%8.4f", outputCoordinates[i].atomName1, (i + 1), outputCoordinates[i].atomName1, outputCoordinates[i].atomName1, "?", 0, 0, outputCoordinates[i].col10, 0, 0, 8, 1.0, 0.0);
+		fprintf(outputMDF, "XXXX_1:%s%-5d%5s%4s%7s%6d%3d%11.4f%2d%2d%2d%7.4f%8.4f", outputCoordinates[i].atomName1, (i + 1), outputCoordinates[i].atomName1, outputCoordinates[i].atomName1, "?", 0, 0, outputCoordinates[i].col10, 0, 0, 8, 1.0, 0.0);
 
 		// Printing information about bonded atoms
 		// if (atomID1 > 0) {
