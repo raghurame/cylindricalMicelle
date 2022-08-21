@@ -85,7 +85,18 @@ int main(int argc, char const *argv[])
 	// Save the above information as *.car and *.mdf files
 	writeCar (outputCoordinates, totalAtoms, inputStructures, nSurfactants);
 	writeMdf (outputCoordinates, outputBonds, totalAtoms, inputStructures, nSurfactants);
+
+	printf("Creating lammps data file...\n");
 	system ("./msi2lmp_gcc32.exe finalStructure");
+
+	printf("Adding polarizable gold substrate...\n");
+	CARTESIAN lowerBounds, upperBounds;
+	computeOutputBounds (&lowerBounds, &upperBounds, outputCoordinates, totalAtoms);
+	// Add a gold surface in XY plane.
+	// Surfactants are filled first in X axis, then in Y axis. Increment in Z axis was given at the end.
+	// So, dimensions along X and Y will be greater than in X direction.
+
+	printf("Filling the remaining area with water molecules...\n");
 
 	free (inputStructures);
 	fclose (readConfig);
