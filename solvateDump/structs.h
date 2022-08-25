@@ -1,5 +1,5 @@
-#ifndef STRUCT_SOLVATE
-#define STRUCT_SOLVATE
+#ifndef STRUCT_SOLVATEDUMP
+#define STRUCT_SOLVATEDUMP
 
 typedef struct datafile_atoms
 {

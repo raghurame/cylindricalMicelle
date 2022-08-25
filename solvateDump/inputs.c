@@ -5,8 +5,9 @@
 #include <unistd.h>
 #include <time.h>
 #include "structs.h"
+#include "inputs.h"
 
-DATAFILE_INFO readData (const char *dataFileName, DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, DATA_DIHEDRALS **dihedrals, DATA_IMPROPERS **impropers)
+DATAFILE_INFO readData (const char *dataFileName, DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, DATA_DIHEDRALS **dihedrals, DATA_IMPROPERS **impropers, DATAFILE_INFO *datafile, BOUNDS *datafileBoundary)
 {
 	printf("Reading LAMMPS data file...\n");
 	FILE *input;
@@ -19,12 +20,12 @@ DATAFILE_INFO readData (const char *dataFileName, DATA_ATOMS **atoms, DATA_BONDS
 	int isImproperLine = 0, /*nImpropers = -1,*/ nImproperLine = 0;
 	int printHeaderInfo = 1;
 
-	DATAFILE_INFO datafile;
-	datafile.nAtoms = -1;
-	datafile.nBonds = -1;
-	datafile.nAngles = -1;
-	datafile.nDihedrals = -1;
-	datafile.nImpropers = -1;
+	// DATAFILE_INFO datafile;
+	(*datafile).nAtoms = -1;
+	(*datafile).nBonds = -1;
+	(*datafile).nAngles = -1;
+	(*datafile).nDihedrals = -1;
+	(*datafile).nImpropers = -1;
 
 	char lineString[1000];
 
@@ -38,51 +39,60 @@ DATAFILE_INFO readData (const char *dataFileName, DATA_ATOMS **atoms, DATA_BONDS
 	{
 		if (strstr (lineString, "atoms"))
 		{
-			sscanf (lineString, "%d \n", &datafile.nAtoms);
-			(*atoms) = (DATA_ATOMS *) malloc (datafile.nAtoms * sizeof (DATA_ATOMS));
+			sscanf (lineString, "%d \n", &(*datafile).nAtoms);
+			(*atoms) = (DATA_ATOMS *) malloc ((*datafile).nAtoms * sizeof (DATA_ATOMS));
 		}
 
 		if (strstr (lineString, "bonds"))
 		{
-			sscanf (lineString, "%d \n", &datafile.nBonds);
-			(*bonds) = (DATA_BONDS *) malloc (datafile.nBonds * sizeof (DATA_BONDS));
+			sscanf (lineString, "%d \n", &(*datafile).nBonds);
+			(*bonds) = (DATA_BONDS *) malloc ((*datafile).nBonds * sizeof (DATA_BONDS));
 		}
 
 		if (strstr (lineString, "angles"))
 		{
-			sscanf (lineString, "%d \n", &datafile.nAngles);
-			(*angles) = (DATA_ANGLES *) malloc (datafile.nAngles * sizeof (DATA_ANGLES));
+			sscanf (lineString, "%d \n", &(*datafile).nAngles);
+			(*angles) = (DATA_ANGLES *) malloc ((*datafile).nAngles * sizeof (DATA_ANGLES));
 		}
 
 		if (strstr (lineString, "dihedrals"))
 		{
-			sscanf (lineString, "%d \n", &datafile.nDihedrals);
-			(*dihedrals) = (DATA_DIHEDRALS *) malloc (datafile.nDihedrals * sizeof (DATA_DIHEDRALS));
+			sscanf (lineString, "%d \n", &(*datafile).nDihedrals);
+			(*dihedrals) = (DATA_DIHEDRALS *) malloc ((*datafile).nDihedrals * sizeof (DATA_DIHEDRALS));
 		}
 
 		if (strstr (lineString, "impropers"))
 		{
-			sscanf (lineString, "%d \n", &datafile.nImpropers);
-			(*impropers) = (DATA_IMPROPERS *) malloc (datafile.nImpropers * sizeof (DATA_IMPROPERS));
+			sscanf (lineString, "%d \n", &(*datafile).nImpropers);
+			(*impropers) = (DATA_IMPROPERS *) malloc ((*datafile).nImpropers * sizeof (DATA_IMPROPERS));
 		}
 
 		if (strstr (lineString, "atom types"))
-			sscanf (lineString, "%d \n", &datafile.nAtomTypes);
+			sscanf (lineString, "%d \n", &(*datafile).nAtomTypes);
 
 		if (strstr (lineString, "bond types"))
-			sscanf (lineString, "%d \n", &datafile.nBondTypes);
+			sscanf (lineString, "%d \n", &(*datafile).nBondTypes);
 
 		if (strstr (lineString, "angle types"))
-			sscanf (lineString, "%d \n", &datafile.nAngleTypes);
+			sscanf (lineString, "%d \n", &(*datafile).nAngleTypes);
 
 		if (strstr (lineString, "dihedral types"))
-			sscanf (lineString, "%d \n", &datafile.nDihedralTypes);
+			sscanf (lineString, "%d \n", &(*datafile).nDihedralTypes);
 
 		if (strstr (lineString, "improper types"))
-			sscanf (lineString, "%d \n", &datafile.nImproperTypes);
+			sscanf (lineString, "%d \n", &(*datafile).nImproperTypes);
 
-		if ((datafile.nAtoms >= 0) && (datafile.nBonds >= 0) && (datafile.nAngles >= 0) && (datafile.nDihedrals >= 0) && (datafile.nImpropers >= 0) && (printHeaderInfo))
+		if (((*datafile).nAtoms >= 0) && ((*datafile).nBonds >= 0) && ((*datafile).nAngles >= 0) && ((*datafile).nDihedrals >= 0) && ((*datafile).nImpropers >= 0) && (printHeaderInfo))
 			printHeaderInfo = 0;
+
+		if (strstr (lineString, "xlo") && strstr (lineString, "xhi")) {
+			sscanf (lineString, "%f %f \n", &(*datafileBoundary).xlo, &(*datafileBoundary).xhi); }
+
+		if (strstr (lineString, "ylo") && strstr (lineString, "yhi")) {
+			sscanf (lineString, "%f %f \n", &(*datafileBoundary).ylo, &(*datafileBoundary).yhi); }
+
+		if (strstr (lineString, "zlo") && strstr (lineString, "zhi")) {
+			sscanf (lineString, "%f %f \n", &(*datafileBoundary).zlo, &(*datafileBoundary).zhi); }
 
 		if (strstr (lineString, "Atoms"))
 		{
@@ -130,7 +140,7 @@ DATAFILE_INFO readData (const char *dataFileName, DATA_ATOMS **atoms, DATA_BONDS
 				&(*atoms)[nAtomLine].y, 
 				&(*atoms)[nAtomLine].z);
 			nAtomLine++;
-			if (nAtomLine == datafile.nAtoms)
+			if (nAtomLine == (*datafile).nAtoms)
 				isAtomLine = 0;
 		}
 
@@ -142,7 +152,7 @@ DATAFILE_INFO readData (const char *dataFileName, DATA_ATOMS **atoms, DATA_BONDS
 				&(*bonds)[nBondLine].atom1, 
 				&(*bonds)[nBondLine].atom2);
 			nBondLine++;
-			if (nBondLine == datafile.nBonds)
+			if (nBondLine == (*datafile).nBonds)
 				isBondLine = 0;
 		}
 
@@ -155,7 +165,7 @@ DATAFILE_INFO readData (const char *dataFileName, DATA_ATOMS **atoms, DATA_BONDS
 				&(*angles)[nAngleLine].atom2, 
 				&(*angles)[nAngleLine].atom3);
 			nAngleLine++;
-			if (nAngleLine == datafile.nAngles)
+			if (nAngleLine == (*datafile).nAngles)
 				isAngleLine = 0;
 		}
 
@@ -169,7 +179,7 @@ DATAFILE_INFO readData (const char *dataFileName, DATA_ATOMS **atoms, DATA_BONDS
 				&(*dihedrals)[nDihedralLine].atom3, 
 				&(*dihedrals)[nDihedralLine].atom4);
 			nDihedralLine++;
-			if (nDihedralLine == datafile.nDihedrals)
+			if (nDihedralLine == (*datafile).nDihedrals)
 				isDihedralLine = 0;
 		}
 
@@ -183,17 +193,18 @@ DATAFILE_INFO readData (const char *dataFileName, DATA_ATOMS **atoms, DATA_BONDS
 				&(*impropers)[nImproperLine].atom3, 
 				&(*impropers)[nImproperLine].atom4);
 			nImproperLine++;
-			if (nImproperLine == datafile.nImpropers)
+			if (nImproperLine == (*datafile).nImpropers)
 				isImproperLine = 0;
 		}
 	}
 
-	printf("\nFrom input data file:\n\n nAtoms: %d\n nBonds: %d\n nAngles: %d\n nDihedrals: %d\n nImpropers: %d\n\n", datafile.nAtoms, datafile.nBonds, datafile.nAngles, datafile.nDihedrals, datafile.nImpropers);
-
-	return datafile;
+	// printf("checking\n");
+	// printf("Printing boundary information from data file:\nxlo: %f; xhi: %f\nylo: %f; yhi: %f\nzlo: %f; zhi: %f\n", (*datafileBoundary).xlo, (*datafileBoundary).xhi, (*datafileBoundary).ylo, (*datafileBoundary).yhi, (*datafileBoundary).zlo, (*datafileBoundary).zhi);
+	// printf("\nFrom input data file:\n\n nAtoms: %d\n nBonds: %d\n nAngles: %d\n nDihedrals: %d\n nImpropers: %d\n\n", (*datafile).nAtoms, (*datafile).nBonds, (*datafile).nAngles, (*datafile).nDihedrals, (*datafile).nImpropers);
+	// fflush (stdout);
 }
 
-DUMP *readLastFrame (const char *pipeString, int nAtoms, BOUNDS dumpDimension)
+DUMP *readLastDumpFrame (const char *pipeString, int nAtoms)
 {
 	FILE *input;
 	input = popen (pipeString, "r");
