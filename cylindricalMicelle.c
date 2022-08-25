@@ -46,6 +46,8 @@ int main(int argc, char const *argv[])
 
 	inputStructures_farPoints = calculateFarPoints (inputStructures_farPoints, inputCoordinates, nSurfactants, inputStructures);
 
+	printf("\nFar points for surfactant 2:\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nsino: %d (%.2f, %.2f, %.2f)\nsino: %d (%.2f, %.2f, %.2f)\n\n", inputStructures_farPoints[1].sino1, inputStructures_farPoints[1].x1, inputStructures_farPoints[1].y1, inputStructures_farPoints[1].z1, inputStructures_farPoints[1].sino2, inputStructures_farPoints[1].x2, inputStructures_farPoints[1].y2, inputStructures_farPoints[1].z2);
+
 	inputCoordinates = orientSurfactants (inputCoordinates, nSurfactants, inputStructures, inputStructures_farPoints);
 
 	// Find the longest dimension on X, Y, and Z
@@ -96,7 +98,7 @@ int main(int argc, char const *argv[])
 	// // Surfactants are filled first in X axis, then in Y axis. Increment in Z axis was given at the end.
 	// // So, dimensions along X and Y will be greater than in X direction.
 
-	printf("Filling the remaining area with water molecules...\n");
+	// printf("Filling the remaining area with water molecules...\n");
 
 	free (inputStructures);
 	fclose (readConfig);

@@ -87,9 +87,9 @@ COORDINATES **translateCoordinates (COORDINATES **inputCoordinates, int nSurfact
 	{
 		// Calculate the distance between far point-1 and the center of mass
 		sino1_local = inputStructures_farPoints[i].sino1;
-		location_farPoint1.x = inputCoordinates[i][sino1_local].x;
-		location_farPoint1.y = inputCoordinates[i][sino1_local].y;
-		location_farPoint1.z = inputCoordinates[i][sino1_local].z;
+		location_farPoint1.x = inputCoordinates[i][sino1_local - 1].x;
+		location_farPoint1.y = inputCoordinates[i][sino1_local - 1].y;
+		location_farPoint1.z = inputCoordinates[i][sino1_local - 1].z;
 		// distanceFromCOM.x = inputCoordinates[i][sino1_local].x - comForMolecules[i].x;
 		// distanceFromCOM.y = inputCoordinates[i][sino1_local].y - comForMolecules[i].y;
 		// distanceFromCOM.z = inputCoordinates[i][sino1_local].z - comForMolecules[i].z;
@@ -115,6 +115,7 @@ COORDINATES **alignMolecule (COORDINATES **inputCoordinates, int nSurfactants, S
 	// Then rotate the molecule by the same angle, but in negative side.
 	float x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, dotProduct, magnitude1, magnitude2, cosTheta, theta;
 
+	printf("\n");
 	for (int i = 0; i < nSurfactants; ++i)
 	{
 		x1 = inputStructures_farPoints[i].x1;
@@ -141,12 +142,14 @@ COORDINATES **alignMolecule (COORDINATES **inputCoordinates, int nSurfactants, S
 		cosTheta = dotProduct / (sqrt (magnitude1) * sqrt (magnitude2));
 		theta = acosf (cosTheta);
 
+		printf("Surfactant %d: theta: %.2f (degrees)\n", i + 1, theta * 180 / 3.14);
+
 		// Aligning the molecule along XY plane
 		// Not modifying the Z values
 		for (int j = 0; j < inputStructures[i].nAtoms; ++j)
 		{
 			// printf("mol %d: %.2f, %.2f --> ", i, inputCoordinates[i][j].x, inputCoordinates[i][j].y);
-			inputCoordinates[i][j].x = (inputCoordinates[i][j].x * cosf (theta)) - (inputCoordinates[i][j].y * sinf (theta));
+			inputCoordinates[i][j].x = (inputCoordinates[i][j].x * cosf (theta)) + (inputCoordinates[i][j].y * sinf (theta));
 			inputCoordinates[i][j].y = (inputCoordinates[i][j].x * sinf (theta)) - (inputCoordinates[i][j].y * cosf (theta));
 			// printf("%.2f, %.2f\n", inputCoordinates[i][j].x, inputCoordinates[i][j].y);
 		}
@@ -163,12 +166,35 @@ COORDINATES **alignMolecule (COORDINATES **inputCoordinates, int nSurfactants, S
 		// Here Y values are not modified
 		for (int j = 0; j < inputStructures[i].nAtoms; ++j)
 		{
-			inputCoordinates[i][j].x = (inputCoordinates[i][j].x * cosf (theta)) - (inputCoordinates[i][j].z * sinf (theta));
+			inputCoordinates[i][j].x = (inputCoordinates[i][j].x * cosf (theta)) + (inputCoordinates[i][j].z * sinf (theta));
 			inputCoordinates[i][j].z = (inputCoordinates[i][j].x * sinf (theta)) - (inputCoordinates[i][j].z * cosf (theta));
 		}
 	}
 
 	return inputCoordinates;
+}
+
+void printOrientedSurfactants (COORDINATES **inputCoordinates, int nSurfactants, SURFACTANT *inputStructures)
+{
+	for (int i = 0; i < nSurfactants; ++i)
+	{
+		FILE *printSurfactantXYZ;
+
+		char *surfactantFilename;
+		surfactantFilename = (char *) malloc (50 * sizeof (char));
+		snprintf (surfactantFilename, 50, "surfactant_%d.xyz", i + 1);
+
+		printSurfactantXYZ = fopen (surfactantFilename, "w");
+
+		fprintf(printSurfactantXYZ, "%d\n# Visualizing oriented surfactant\n", inputStructures[i].nAtoms);
+
+		for (int j = 0; j < inputStructures[i].nAtoms; ++j)
+		{
+			fprintf(printSurfactantXYZ, "C\t%f\t%f\t%f\n", inputCoordinates[i][j].x, inputCoordinates[i][j].y, inputCoordinates[i][j].z);
+		}
+
+		fclose (printSurfactantXYZ);
+	}
 }
 
 COORDINATES **orientSurfactants (COORDINATES **inputCoordinates, int nSurfactants, SURFACTANT *inputStructures, FARTHESTPOINTS *inputStructures_farPoints)
@@ -186,6 +212,9 @@ COORDINATES **orientSurfactants (COORDINATES **inputCoordinates, int nSurfactant
 
 	// Aligning the molecule
 	inputCoordinates = alignMolecule (inputCoordinates, nSurfactants, inputStructures, inputStructures_farPoints);
+
+	// Printing the inputCoordinates for visual checking
+	printOrientedSurfactants (inputCoordinates, nSurfactants, inputStructures);
 
 	return inputCoordinates;
 }

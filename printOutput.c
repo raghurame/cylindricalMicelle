@@ -40,8 +40,9 @@ void computeOutputBounds (CARTESIAN *lowerBounds, CARTESIAN *upperBounds, COORDI
 
 void writeCar (COORDINATES *outputCoordinates, int totalAtoms, SURFACTANT *inputStructures, int nSurfactants)
 {
-	FILE *outputCAR;
+	FILE *outputCAR, *outputXYZ;
 	outputCAR = fopen ("finalStructure.car", "w");
+	outputXYZ = fopen ("finalStructure.xyz", "w");
 
 	CARTESIAN lowerBounds, upperBounds;
 
@@ -53,9 +54,14 @@ void writeCar (COORDINATES *outputCoordinates, int totalAtoms, SURFACTANT *input
 	for (int i = 0; i < totalAtoms; ++i) {
 		fprintf(outputCAR, "%s%-5d%14.9f%14.9f%14.9f XXXX 1%6s%7s%8.3f\n", outputCoordinates[i].atomName1, (i + 1), outputCoordinates[i].x, outputCoordinates[i].y, outputCoordinates[i].z, outputCoordinates[i].atomName2, outputCoordinates[i].atomName1, outputCoordinates[i].col10); }
 
+	fprintf(outputXYZ, "%d\n# For quick visualization\n", totalAtoms);
+	for (int i = 0; i < totalAtoms; ++i) {
+		fprintf(outputXYZ, "C\t%f\t%f\t%f\n", outputCoordinates[i].x, outputCoordinates[i].y, outputCoordinates[i].z); }
+
 	fprintf(outputCAR, "end\nend\n");
 
 	fclose (outputCAR);
+	fclose (outputXYZ);
 }
 
 void writeMdf (COORDINATES *outputCoordinates, BONDS *outputBonds, int totalAtoms, SURFACTANT *inputStructures, int nSurfactants)
