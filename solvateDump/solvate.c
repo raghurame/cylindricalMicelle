@@ -36,5 +36,11 @@ int main(int argc, char const *argv[])
 
 	datafile = readData (argv[1], &atoms, &bonds, &angles, &dihedrals, &impropers);
 
+	int nAtoms = getNatoms (argv[2]);
+	DUMP *traj;
+	traj = (DUMP *) malloc (nAtoms * sizeof (DUMP));
+
+	traj = readLastFrame (pipeString, nAtoms, dumpDimension);
+
 	return 0;
 }

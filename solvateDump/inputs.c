@@ -192,3 +192,66 @@ DATAFILE_INFO readData (const char *dataFileName, DATA_ATOMS **atoms, DATA_BONDS
 
 	return datafile;
 }
+
+DUMP *readLastFrame (const char *pipeString, int nAtoms, BOUNDS dumpDimension)
+{
+	FILE *input;
+	input = popen (pipeString, "r");
+
+	DUMP *traj, *traj_temp, com, max;
+	traj = (DUMP *) malloc (nAtoms * sizeof (DUMP));
+	traj_temp = (DUMP *) malloc (nAtoms * sizeof (DUMP));
+
+	int lineCount = 0;
+
+	char lineString[1000];
+
+	while (fgets (lineString, 1000, input) != NULL)
+	{
+		sscanf (lineString, "%d %d %f %f %f %f %f %f %d %d %d\n", &traj_temp[lineCount].id, &traj_temp[lineCount].type, &traj_temp[lineCount].x, &traj_temp[lineCount].y, &traj_temp[lineCount].z, &traj_temp[lineCount].xs, &traj_temp[lineCount].ys, &traj_temp[lineCount].zs, &traj_temp[lineCount].ix, &traj_temp[lineCount].iy, &traj_temp[lineCount].iz);
+		lineCount++;
+	}
+
+	for (int i = 0; i < nAtoms; ++i)
+	{
+		for (int j = 0; j < nAtoms; ++j)
+		{
+			if (traj_temp[j].id == i + 1)
+			{
+				traj[i].id = traj_temp[j].id;
+				traj[i].type = traj_temp[j].type;
+				traj[i].x = traj_temp[j].x;
+				traj[i].y = traj_temp[j].y;
+				traj[i].z = traj_temp[j].z;
+				traj[i].xs = traj_temp[j].xs;
+				traj[i].ys = traj_temp[j].ys;
+				traj[i].zs = traj_temp[j].zs;
+				traj[i].ix = traj_temp[j].ix;
+				traj[i].iy = traj_temp[j].iy;
+				traj[i].iz = traj_temp[j].iz;
+			}
+		}
+	}
+
+	pclose (input);
+	return traj;
+}
+
+int getNatoms (const char *inputFileName)
+{
+	FILE *read = fopen (inputFileName, "r");
+	char lineString[2000];
+	int lineNumber = 0, natoms;
+
+	while (fgets (lineString, 2000, read) != NULL)
+	{
+		lineNumber++;
+
+		if (lineNumber == 4)
+		{
+			sscanf (lineString, "%d", &natoms);
+			return natoms;
+		}
+	}
+	return 0;
+}
