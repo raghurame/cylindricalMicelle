@@ -387,5 +387,15 @@ int main(int argc, char const *argv[])
 		atoms[i].z = traj[i].z;
 	}
 
+	// Add SPC/Fw water molecules within the dumpfileBoundary
+	// Adding new atoms, bonds, and angles for new water molecules
+	DATA_ATOMS *atomsWater;
+	DATA_BONDS *bondsWater;
+	DATA_ANGLES *anglesWater;
+	DATA_DIHEDRALS *dihedralsWater;
+	DATA_IMPROPERS *impropersWater;
+
+	int nWater = calculateNWater (dumpfileBoundary);
+
 	return 0;
 }
