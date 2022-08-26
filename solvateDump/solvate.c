@@ -344,6 +344,41 @@ BOUNDS readDumpfileBoundary (const char *pipe_dumpBoundary)
 	return dumpfileBoundary;
 }
 
+int calculateNWater (BOUNDS dumpfileBoundary)
+{
+	float xLength = (dumpfileBoundary.xhi - dumpfileBoundary.xlo), yLength = (dumpfileBoundary.yhi - dumpfileBoundary.ylo), zLength = (dumpfileBoundary.zhi - dumpfileBoundary.zlo), avogadroNumber = 6.023, waterDensity = 1.0, molarMass = 18;
+	float nWater_max = (waterDensity * xLength * yLength * zLength * avogadroNumber * 0.1 / molarMass);
+	return nWater_max;
+}
+
+DATA_ATOMS *populateWater (DATA_ATOMS *atomsWater, int nWater, BOUNDS dumpfileBoundary, DATA_ATOMS *atoms, DATAFILE_INFO datafileInfo)
+{
+	int nBins_x = (int) floot (cbrt (nWater)), nBins_y = (int) floot (cbrt (nWater)), nBins_z = (int) floot (cbrt (nWater));
+	float distSeparation_x = (dumpfileBoundary.xhi - dumpfileBoundary.xlo) / nBins_x, distSeparation_y = (dumpfileBoundary.yhi - dumpfileBoundary.ylo) / nBins_y, distSeparation_z = (dumpfileBoundary.zhi - dumpfileBoundary.zlo) / nBins_z;
+	float distance_water_mol;
+	int currentWaterAtom = 0;
+
+	// Distributing water evenly in cartesian space
+	for (int i = 0; i < nBins_x; ++i)
+	{
+		for (int j = 0; j < nBins_y; ++j)
+		{
+			for (int k = 0; k < nBins_z; ++k)
+			{
+				atomsWater[currentWaterAtom].x = dumpfileBoundary.xlo + ((i + 1) * distSeparation_x) - (distSeparation_x / 2);
+				atomsWater[currentWaterAtom].y = dumpfileBoundary.ylo + ((j + 1) * distSeparation_y) - (distSeparation_y / 2);
+				atomsWater[currentWaterAtom].z = dumpfileBoundary.zlo + ((k + 1) * distSeparation_z) - (distSeparation_z / 2);
+
+				for (int i = 0; i < datafileInfo.nAtoms; ++i)
+				{
+					distance_water_mol = sqrt (pow (atomsWater[currentWaterAtom].x + , 2) + pow (, 2) + pow (, 2));
+				}
+			}
+		}
+	}
+
+}
+
 int main(int argc, char const *argv[])
 {
 	FILE *inputData, *inputDump, *output;
@@ -396,6 +431,12 @@ int main(int argc, char const *argv[])
 	DATA_IMPROPERS *impropersWater;
 
 	int nWater = calculateNWater (dumpfileBoundary);
+
+	atomsWater = (DATA_ATOMS *) malloc (nWater * sizeof (DATA_ATOMS));
+	bondsWater = (DATA_BONDS *) malloc (nWater * 2 * sizeof (DATA_BONDS));
+	anglesWater = (DATA_ANGLES *) malloc (nWater * sizeof (DATA_ANGLES));
+
+	atomsWater = populateWater (atomsWater, nWater, dumpfileBoundary, atoms, datafileInfo);
 
 	return 0;
 }
