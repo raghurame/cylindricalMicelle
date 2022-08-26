@@ -65,11 +65,9 @@ typedef struct bounds
 	float xlo, xhi, ylo, yhi, zlo, zhi;
 } BOUNDS;
 
-DATAFILE_INFO readData (const char *dataFileName, DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, DATA_DIHEDRALS **dihedrals, DATA_IMPROPERS **impropers, DATAFILE_INFO *datafile, BOUNDS *datafileBoundary)
+void readData (FILE *input, DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, DATA_DIHEDRALS **dihedrals, DATA_IMPROPERS **impropers, DATAFILE_INFO *datafile, BOUNDS *datafileBoundary)
 {
 	printf("Reading LAMMPS data file...\n");
-	FILE *input;
-	input = fopen (dataFileName, "r");
 
 	int isAtomLine = 0, /*nAtoms = -1,*/ nAtomLine = 0;
 	int isBondLine = 0, /*nBonds = -1,*/ nBondLine = 0;
@@ -256,13 +254,12 @@ DATAFILE_INFO readData (const char *dataFileName, DATA_ATOMS **atoms, DATA_BONDS
 		}
 	}
 
-	// printf("checking\n");
-	// printf("Printing boundary information from data file:\nxlo: %f; xhi: %f\nylo: %f; yhi: %f\nzlo: %f; zhi: %f\n", (*datafileBoundary).xlo, (*datafileBoundary).xhi, (*datafileBoundary).ylo, (*datafileBoundary).yhi, (*datafileBoundary).zlo, (*datafileBoundary).zhi);
-	// printf("\nFrom input data file:\n\n nAtoms: %d\n nBonds: %d\n nAngles: %d\n nDihedrals: %d\n nImpropers: %d\n\n", (*datafile).nAtoms, (*datafile).nBonds, (*datafile).nAngles, (*datafile).nDihedrals, (*datafile).nImpropers);
-	// fflush (stdout);
+	printf("\nPrinting boundary information from data file:\n\n  xlo: %f; xhi: %f\n  ylo: %f; yhi: %f\n  zlo: %f; zhi: %f\n", (*datafileBoundary).xlo, (*datafileBoundary).xhi, (*datafileBoundary).ylo, (*datafileBoundary).yhi, (*datafileBoundary).zlo, (*datafileBoundary).zhi);
+	printf("\nFrom input data file:\n\n  nAtoms: %d\n  nBonds: %d\n  nAngles: %d\n  nDihedrals: %d\n  nImpropers: %d\n\n", (*datafile).nAtoms, (*datafile).nBonds, (*datafile).nAngles, (*datafile).nDihedrals, (*datafile).nImpropers);
+	rewind (input);
 }
 
-DUMP *readLastDumpFrame (const char *pipeString, int nAtoms)
+DUMP *readLastDumpFrame (char *pipeString, int nAtoms)
 {
 	FILE *input;
 	input = popen (pipeString, "r");
@@ -306,29 +303,55 @@ DUMP *readLastDumpFrame (const char *pipeString, int nAtoms)
 	return traj;
 }
 
-int getNatoms (const char *inputFileName)
+int getNatoms (FILE *inputDump)
 {
-	FILE *read = fopen (inputFileName, "r");
 	char lineString[2000];
 	int lineNumber = 0, natoms;
 
-	while (fgets (lineString, 2000, read) != NULL)
+	while (fgets (lineString, 2000, inputDump) != NULL)
 	{
 		lineNumber++;
 
 		if (lineNumber == 4)
 		{
 			sscanf (lineString, "%d", &natoms);
+			rewind (inputDump);
 			return natoms;
 		}
 	}
 	return 0;
 }
 
+BOUNDS readDumpfileBoundary (const char *pipe_dumpBoundary)
+{
+	FILE *readingBoundary;
+	readingBoundary = popen (pipe_dumpBoundary, "r");
+
+	char lineString[2000];
+
+	BOUNDS dumpfileBoundary;
+
+	fgets (lineString, 2000, readingBoundary);
+	sscanf (lineString, "%f %f\n", &dumpfileBoundary.xlo, &dumpfileBoundary.xhi);
+	fgets (lineString, 2000, readingBoundary);
+	sscanf (lineString, "%f %f\n", &dumpfileBoundary.ylo, &dumpfileBoundary.yhi);
+	fgets (lineString, 2000, readingBoundary);
+	sscanf (lineString, "%f %f\n", &dumpfileBoundary.zlo, &dumpfileBoundary.zhi);
+
+	printf("Printing Boundary information from dump file:\n\nxlo: %f;xhi: %f;\nylo: %f; yhi: %f;\nzlo: %f; zhi: %f;\n\n", dumpfileBoundary.xlo, dumpfileBoundary.xhi, dumpfileBoundary.ylo, dumpfileBoundary.yhi, dumpfileBoundary.zlo, dumpfileBoundary.zhi);
+
+	pclose (readingBoundary);
+	return dumpfileBoundary;
+}
+
 int main(int argc, char const *argv[])
 {
 	FILE *inputData, *inputDump, *output;
-	int nAtoms = 5;// getNatoms (argv[2]);
+	inputData = fopen (argv[1], "r");
+	inputDump = fopen (argv[2], "r");
+	output = fopen (argv[3], "w");
+
+	int nAtoms = getNatoms (inputDump);
 
 	// Read data file
 	DATA_ATOMS *atoms;
@@ -341,14 +364,28 @@ int main(int argc, char const *argv[])
 
 	BOUNDS datafileBoundary, dumpfileBoundary;
 
-	printf("%s\n", argv[1]);
-	printf("%s\n", argv[2]);
-	// readData (argv[1], &atoms, &bonds, &angles, &dihedrals, &impropers, &datafileInfo, &datafileBoundary);
+	readData (inputData, &atoms, &bonds, &angles, &dihedrals, &impropers, &datafileInfo, &datafileBoundary);
 
 	DUMP *traj;
 	traj = (DUMP *) malloc (nAtoms * sizeof (DUMP));
 
-	// traj = readLastDumpFrame (argv[2], nAtoms);
+	char *pipe_lastframe;
+	pipe_lastframe = (char *) malloc (50 * sizeof (char));
+	snprintf (pipe_lastframe, 50, "tail -%d %s", nAtoms, argv[2]);
+	traj = readLastDumpFrame (pipe_lastframe, nAtoms);
+
+	char *pipe_dumpBoundary;
+	pipe_dumpBoundary = (char *) malloc (50 * sizeof (char));
+	snprintf (pipe_dumpBoundary, 50, "tail -%d %s | head -3", (nAtoms + 4), argv[2]);
+	dumpfileBoundary = readDumpfileBoundary (pipe_dumpBoundary);
+
+	// Replacing the coordinates in data file with the coordinates obtained from trajectory file
+	for (int i = 0; i < nAtoms; ++i)
+	{
+		atoms[i].x = traj[i].x;
+		atoms[i].y = traj[i].y;
+		atoms[i].z = traj[i].z;
+	}
 
 	return 0;
 }
