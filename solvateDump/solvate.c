@@ -581,7 +581,7 @@ void printModifiedData (FILE *output, DATAFILE_INFO datafileInfo, ATOMIC_MASS *m
 	// Printing bonds of newly added water molecules
 	for (int i = 0; i < (nWater_current * 2); ++i)
 	{
-		fprintf(output, "[%d]\t%d\t%d\t%d\t%d\n", i, bondsWater[i].id, bondsWater[i].bondType, bondsWater[i].atom1, bondsWater[i].atom2);
+		fprintf(output, "\t%d\t%d\t%d\t%d\n", bondsWater[i].id, bondsWater[i].bondType, bondsWater[i].atom1, bondsWater[i].atom2);
 	}
 
 	fprintf(output, "\nAngles\n\n");
