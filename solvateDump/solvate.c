@@ -351,12 +351,29 @@ int calculateNWater (BOUNDS dumpfileBoundary)
 	return nWater_max;
 }
 
+float deg2rad (float degrees) {
+	return degrees * M_PI / 180.0; }
+
+void findAttachedHydrogens (float ox, float oy, float oz, float *h1x, float *h1y, float *h1z, float *h2x, float *h2y, float *h2z)
+{
+	// HOH angle is 113.24. Consider O at the origin and the two Hs placed along the XY plane (facing along the positive X axis)
+	// Each OH bond makes 56.62 degrees with the X axis. 
+	// So, for H1, the X coordinate is cos (56.62) and the Y coordinate is sin (56.62)
+	// For H2, the X coordinate is cos (56.62) and the Y coordinate  is -sin (56.62)
+	(*h1x) = ox + cosf (deg2rad (56.62));
+	(*h1y) = oy + sinf (deg2rad (56.62));
+	(*h1z) = oz;
+	(*h2x) = ox + cosf (deg2rad (56.62));
+	(*h2y) = oy -sinf (deg2rad (56.62));
+	(*h2z) = oz;
+}
+
 DATA_ATOMS *populateWater (DATA_ATOMS *atomsWater, int nWater, BOUNDS dumpfileBoundary, DATA_ATOMS *atoms, DATAFILE_INFO datafileInfo)
 {
-	int nBins_x = (int) floot (cbrt (nWater)), nBins_y = (int) floot (cbrt (nWater)), nBins_z = (int) floot (cbrt (nWater));
+	int nBins_x = (int) floor (cbrt (nWater)), nBins_y = (int) floor (cbrt (nWater)), nBins_z = (int) floor (cbrt (nWater));
 	float distSeparation_x = (dumpfileBoundary.xhi - dumpfileBoundary.xlo) / nBins_x, distSeparation_y = (dumpfileBoundary.yhi - dumpfileBoundary.ylo) / nBins_y, distSeparation_z = (dumpfileBoundary.zhi - dumpfileBoundary.zlo) / nBins_z;
-	float distance_water_mol;
-	int currentWaterAtom = 0;
+	float distance_O_mol, distance_H1_mol, distance_H2_mol;
+	int currentWaterAtom = 0, isOverlap = 0;
 
 	// Distributing water evenly in cartesian space
 	for (int i = 0; i < nBins_x; ++i)
@@ -369,14 +386,32 @@ DATA_ATOMS *populateWater (DATA_ATOMS *atomsWater, int nWater, BOUNDS dumpfileBo
 				atomsWater[currentWaterAtom].y = dumpfileBoundary.ylo + ((j + 1) * distSeparation_y) - (distSeparation_y / 2);
 				atomsWater[currentWaterAtom].z = dumpfileBoundary.zlo + ((k + 1) * distSeparation_z) - (distSeparation_z / 2);
 
+				findAttachedHydrogens (atomsWater[currentWaterAtom].x, atomsWater[currentWaterAtom].y, atomsWater[currentWaterAtom].z, &atomsWater[currentWaterAtom + 1].x, &atomsWater[currentWaterAtom + 1].y, &atomsWater[currentWaterAtom + 1].z, &atomsWater[currentWaterAtom + 2].x, &atomsWater[currentWaterAtom + 2].y, &atomsWater[currentWaterAtom + 2].z);
+
+				// Resetting the isOverlap variable before checking the distances
+				isOverlap = 0;
+
 				for (int i = 0; i < datafileInfo.nAtoms; ++i)
 				{
-					distance_water_mol = sqrt (pow (atomsWater[currentWaterAtom].x + , 2) + pow (, 2) + pow (, 2));
+					distance_O_mol = sqrt (pow (atomsWater[currentWaterAtom].x - atoms[i].x, 2) + pow (atomsWater[currentWaterAtom].y - atoms[i].y, 2) + pow (atomsWater[currentWaterAtom].z - atoms[i].z, 2));
+					distance_H1_mol = sqrt (pow (atomsWater[currentWaterAtom + 1].x - atoms[i].x, 2) + pow (atomsWater[currentWaterAtom + 1].y - atoms[i].y, 2) + pow (atomsWater[currentWaterAtom + 1].z - atoms[i].z, 2));
+					distance_H2_mol = sqrt (pow (atomsWater[currentWaterAtom + 2].x - atoms[i].x, 2) + pow (atomsWater[currentWaterAtom + 2].y - atoms[i].y, 2) + pow (atomsWater[currentWaterAtom + 2].z - atoms[i].z, 2));
+
+					if ((distance_O_mol < 3) || (distance_H1_mol < 3) || (distance_H2_mol < 3)) {
+						isOverlap = 1; }
 				}
+
+				if (isOverlap == 0) {
+					currentWaterAtom += 3;
+					printf("Adding water... %d/%d                           \r", (int) (currentWaterAtom / 3), nWater);
+					fflush (stdout); }
 			}
 		}
 	}
 
+	printf("\n\nMax number of water that can be added (based on overall simulation volume): %d\nNumber of water molecules added after checking for overlaps: %d\n\n", nWater, (int) floor (currentWaterAtom / 3));
+
+	return atomsWater;
 }
 
 int main(int argc, char const *argv[])
@@ -432,11 +467,19 @@ int main(int argc, char const *argv[])
 
 	int nWater = calculateNWater (dumpfileBoundary);
 
-	atomsWater = (DATA_ATOMS *) malloc (nWater * sizeof (DATA_ATOMS));
+	// There are three atoms, 2 bonds and 1 angle for every water molecule
+	atomsWater = (DATA_ATOMS *) malloc (nWater * 3 * sizeof (DATA_ATOMS));
 	bondsWater = (DATA_BONDS *) malloc (nWater * 2 * sizeof (DATA_BONDS));
 	anglesWater = (DATA_ANGLES *) malloc (nWater * sizeof (DATA_ANGLES));
 
 	atomsWater = populateWater (atomsWater, nWater, dumpfileBoundary, atoms, datafileInfo);
+
+	// Recalculate the simulation box size based on the added water molecules
+	// because some Hs can protrude sligtly outside the simulation box
+
+	// Then add bonds and angles
+
+	// Print the final data file (with masses for water)
 
 	return 0;
 }
