@@ -52,6 +52,7 @@ typedef struct datafileInfo
 {
 	int nAtoms, nBonds, nAngles, nDihedrals, nImpropers;
 	int nAtomTypes, nBondTypes, nAngleTypes, nDihedralTypes, nImproperTypes;
+	int maxMolType;
 } DATAFILE_INFO;
 
 typedef struct dump
@@ -65,7 +66,13 @@ typedef struct bounds
 	float xlo, xhi, ylo, yhi, zlo, zhi;
 } BOUNDS;
 
-void readData (FILE *input, DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, DATA_DIHEDRALS **dihedrals, DATA_IMPROPERS **impropers, DATAFILE_INFO *datafile, BOUNDS *datafileBoundary)
+typedef struct mass
+{
+	int atomType;
+	float mass;
+} ATOMIC_MASS;
+
+void readData (FILE *input, DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, DATA_DIHEDRALS **dihedrals, DATA_IMPROPERS **impropers, DATAFILE_INFO *datafile, BOUNDS *datafileBoundary, ATOMIC_MASS **mass)
 {
 	printf("Reading LAMMPS data file...\n");
 
@@ -123,8 +130,9 @@ void readData (FILE *input, DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES 
 			(*impropers) = (DATA_IMPROPERS *) malloc ((*datafile).nImpropers * sizeof (DATA_IMPROPERS));
 		}
 
-		if (strstr (lineString, "atom types"))
+		if (strstr (lineString, "atom types")) {
 			sscanf (lineString, "%d \n", &(*datafile).nAtomTypes);
+			(*mass) = (ATOMIC_MASS *) malloc ((*datafile).nAtomTypes * sizeof (ATOMIC_MASS)); }
 
 		if (strstr (lineString, "bond types"))
 			sscanf (lineString, "%d \n", &(*datafile).nBondTypes);
@@ -149,6 +157,16 @@ void readData (FILE *input, DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES 
 
 		if (strstr (lineString, "zlo") && strstr (lineString, "zhi")) {
 			sscanf (lineString, "%f %f \n", &(*datafileBoundary).zlo, &(*datafileBoundary).zhi); }
+
+		if (strstr (lineString, "Masses"))
+		{
+			fgets (lineString, 1000, input);
+			for (int i = 0; i < (*datafile).nAtomTypes; ++i)
+			{
+				fgets (lineString, 1000, input);
+				sscanf (lineString, "%d %f", &(*mass)[i].atomType, &(*mass)[i].mass);
+			}
+		}
 
 		if (strstr (lineString, "Atoms"))
 		{
@@ -256,6 +274,12 @@ void readData (FILE *input, DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES 
 
 	printf("\nPrinting boundary information from data file:\n\n  xlo: %f; xhi: %f\n  ylo: %f; yhi: %f\n  zlo: %f; zhi: %f\n", (*datafileBoundary).xlo, (*datafileBoundary).xhi, (*datafileBoundary).ylo, (*datafileBoundary).yhi, (*datafileBoundary).zlo, (*datafileBoundary).zhi);
 	printf("\nFrom input data file:\n\n  nAtoms: %d\n  nBonds: %d\n  nAngles: %d\n  nDihedrals: %d\n  nImpropers: %d\n\n", (*datafile).nAtoms, (*datafile).nBonds, (*datafile).nAngles, (*datafile).nDihedrals, (*datafile).nImpropers);
+	printf("\nMasses:\n\n");
+	for (int i = 0; i < (*datafile).nAtomTypes; ++i)
+	{
+		printf("%d %f\n", (*mass)[i].atomType, (*mass)[i].mass);
+	}
+	printf("\n");
 	rewind (input);
 }
 
@@ -368,12 +392,12 @@ void findAttachedHydrogens (float ox, float oy, float oz, float *h1x, float *h1y
 	(*h2z) = oz;
 }
 
-DATA_ATOMS *populateWater (DATA_ATOMS *atomsWater, int nWater, BOUNDS dumpfileBoundary, DATA_ATOMS *atoms, DATAFILE_INFO datafileInfo)
+DATA_ATOMS *populateWater (DATA_ATOMS *atomsWater, int nWater, BOUNDS dumpfileBoundary, DATA_ATOMS *atoms, DATAFILE_INFO datafileInfo, int *nWater_current)
 {
 	int nBins_x = (int) floor (cbrt (nWater)), nBins_y = (int) floor (cbrt (nWater)), nBins_z = (int) floor (cbrt (nWater));
 	float distSeparation_x = (dumpfileBoundary.xhi - dumpfileBoundary.xlo) / nBins_x, distSeparation_y = (dumpfileBoundary.yhi - dumpfileBoundary.ylo) / nBins_y, distSeparation_z = (dumpfileBoundary.zhi - dumpfileBoundary.zlo) / nBins_z;
 	float distance_O_mol, distance_H1_mol, distance_H2_mol;
-	int currentWaterAtom = 0, isOverlap = 0;
+	int currentWaterAtom = 0, isOverlap = 0, beginningID = datafileInfo.nAtoms;
 
 	// Distributing water evenly in cartesian space
 	for (int i = 0; i < nBins_x; ++i)
@@ -387,6 +411,11 @@ DATA_ATOMS *populateWater (DATA_ATOMS *atomsWater, int nWater, BOUNDS dumpfileBo
 				atomsWater[currentWaterAtom].z = dumpfileBoundary.zlo + ((k + 1) * distSeparation_z) - (distSeparation_z / 2);
 
 				findAttachedHydrogens (atomsWater[currentWaterAtom].x, atomsWater[currentWaterAtom].y, atomsWater[currentWaterAtom].z, &atomsWater[currentWaterAtom + 1].x, &atomsWater[currentWaterAtom + 1].y, &atomsWater[currentWaterAtom + 1].z, &atomsWater[currentWaterAtom + 2].x, &atomsWater[currentWaterAtom + 2].y, &atomsWater[currentWaterAtom + 2].z);
+
+				// Assigning atom IDs
+				atomsWater[currentWaterAtom].id = beginningID + currentWaterAtom + 1;
+				atomsWater[currentWaterAtom + 1].id = beginningID + currentWaterAtom + 2;
+				atomsWater[currentWaterAtom + 2].id = beginningID + currentWaterAtom + 3;
 
 				// Resetting the isOverlap variable before checking the distances
 				isOverlap = 0;
@@ -411,7 +440,78 @@ DATA_ATOMS *populateWater (DATA_ATOMS *atomsWater, int nWater, BOUNDS dumpfileBo
 
 	printf("\n\nMax number of water that can be added (based on overall simulation volume): %d\nNumber of water molecules added after checking for overlaps: %d\n\n", nWater, (int) floor (currentWaterAtom / 3));
 
+	// Subtracted 3 to counter the last increment to currentWaterAtom variable
+	// Added 1 because the variable starts from 0
+	(*nWater_current) = (currentWaterAtom - 3 + 1) / 3;
 	return atomsWater;
+}
+
+BOUNDS updateBoundary (BOUNDS newSolvatedBoundary, DATA_ATOMS *atomsWater, int nWaterAtoms)
+{
+	for (int i = 0; i < nWaterAtoms; ++i)
+	{
+		if (i == 0) {
+			newSolvatedBoundary.xlo = atomsWater[i].x;
+			newSolvatedBoundary.xhi = atomsWater[i].x;
+			newSolvatedBoundary.ylo = atomsWater[i].y;
+			newSolvatedBoundary.yhi = atomsWater[i].y;
+			newSolvatedBoundary.zlo = atomsWater[i].z;
+			newSolvatedBoundary.zhi = atomsWater[i].z; }
+		else
+		{
+			if (atomsWater[i].x > newSolvatedBoundary.xhi) {
+				newSolvatedBoundary.xhi = atomsWater[i].x; }
+			else if (atomsWater[i].x < newSolvatedBoundary.xlo) {
+				newSolvatedBoundary.xlo = atomsWater[i].x; }
+
+			if (atomsWater[i].y > newSolvatedBoundary.yhi) {
+				newSolvatedBoundary.xhi = atomsWater[i].x; }
+			else if (atomsWater[i].y < newSolvatedBoundary.ylo) {
+				newSolvatedBoundary.ylo = atomsWater[i].y; }
+
+			if (atomsWater[i].z > newSolvatedBoundary.zhi) {
+				newSolvatedBoundary.zhi = atomsWater[i].z; }
+			else if (atomsWater[i].z < newSolvatedBoundary.zlo) {
+				newSolvatedBoundary.zlo = atomsWater[i].z; }
+		}
+	}
+
+	return newSolvatedBoundary;
+}
+
+DATA_BONDS *addWaterBonds (DATA_BONDS *bondsWater, int currentBondID, int nWaterBonds, int bondType, int currentOxygenAtom)
+{	
+	for (int i = 0; i < nWaterBonds; ++i)
+	{
+		bondsWater[i].id = currentBondID;
+		bondsWater[i].bondType = bondType;
+		bondsWater[i].atom1 = currentOxygenAtom;
+		bondsWater[i].atom2 = currentOxygenAtom + 1;
+		currentBondID++;
+
+		bondsWater[i].id = currentBondID;
+		bondsWater[i].bondType = bondType;
+		bondsWater[i].atom1 = currentOxygenAtom;
+		bondsWater[i].atom2 = currentOxygenAtom + 2;
+		currentBondID++;
+	}
+
+	return bondsWater;
+}
+
+DATA_ANGLES *addWaterAngles (DATA_ANGLES *anglesWater, int currentAngleID, int nWaterAngles, int angleType, int currentOxygenAtom)
+{
+	for (int i = 0; i < nWaterAngles; ++i)
+	{
+		anglesWater[i].id = currentAngleID;
+		anglesWater[i].angleType = angleType;
+		anglesWater[i].atom1 = currentOxygenAtom + 1;
+		anglesWater[i].atom2 = currentOxygenAtom;
+		anglesWater[i].atom3 = currentOxygenAtom + 2;
+		currentAngleID++;
+	}
+
+	return anglesWater;
 }
 
 int main(int argc, char const *argv[])
@@ -433,8 +533,9 @@ int main(int argc, char const *argv[])
 	DATAFILE_INFO datafileInfo;
 
 	BOUNDS datafileBoundary, dumpfileBoundary;
+	ATOMIC_MASS *mass;
 
-	readData (inputData, &atoms, &bonds, &angles, &dihedrals, &impropers, &datafileInfo, &datafileBoundary);
+	readData (inputData, &atoms, &bonds, &angles, &dihedrals, &impropers, &datafileInfo, &datafileBoundary, &mass);
 
 	DUMP *traj;
 	traj = (DUMP *) malloc (nAtoms * sizeof (DUMP));
@@ -465,19 +566,25 @@ int main(int argc, char const *argv[])
 	DATA_DIHEDRALS *dihedralsWater;
 	DATA_IMPROPERS *impropersWater;
 
-	int nWater = calculateNWater (dumpfileBoundary);
+	int nWater_max = calculateNWater (dumpfileBoundary), nWater_current = 0;
 
 	// There are three atoms, 2 bonds and 1 angle for every water molecule
-	atomsWater = (DATA_ATOMS *) malloc (nWater * 3 * sizeof (DATA_ATOMS));
-	bondsWater = (DATA_BONDS *) malloc (nWater * 2 * sizeof (DATA_BONDS));
-	anglesWater = (DATA_ANGLES *) malloc (nWater * sizeof (DATA_ANGLES));
+	atomsWater = (DATA_ATOMS *) malloc (nWater_max * 3 * sizeof (DATA_ATOMS));
+	bondsWater = (DATA_BONDS *) malloc (nWater_max * 2 * sizeof (DATA_BONDS));
+	anglesWater = (DATA_ANGLES *) malloc (nWater_max * sizeof (DATA_ANGLES));
 
-	atomsWater = populateWater (atomsWater, nWater, dumpfileBoundary, atoms, datafileInfo);
+	atomsWater = populateWater (atomsWater, nWater_max, dumpfileBoundary, atoms, datafileInfo, &nWater_current);
 
 	// Recalculate the simulation box size based on the added water molecules
 	// because some Hs can protrude sligtly outside the simulation box
+	BOUNDS newSolvatedBoundary;
+	newSolvatedBoundary = updateBoundary (newSolvatedBoundary, atomsWater, (nWater_current * 3));
+
+	printf("New updated boundary after solvation:\n\n%.3f %.3f xlo xhi\n%.3f %.3f ylo yhi\n%.3f %.3f zlo zhi\n", newSolvatedBoundary.xlo, newSolvatedBoundary.xhi, newSolvatedBoundary.ylo, newSolvatedBoundary.yhi, newSolvatedBoundary.zlo, newSolvatedBoundary.zhi);
 
 	// Then add bonds and angles
+	bondsWater = addWaterBonds (bondsWater, (datafileInfo.nBonds + 1), (nWater_current * 2), (datafileInfo.nBondTypes + 1), (datafileInfo.nAtoms + 1));
+	anglesWater = addWaterAngles (anglesWater, (datafileInfo.nAngles + 1), nWater_current, (datafileInfo.nAngleTypes + 1), (datafileInfo.nAtoms + 1));
 
 	// Print the final data file (with masses for water)
 
