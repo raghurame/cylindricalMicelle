@@ -420,6 +420,21 @@ DATA_ATOMS *populateWater (DATA_ATOMS *atomsWater, int nWater, BOUNDS dumpfileBo
 				atomsWater[currentWaterAtom + 1].id = beginningID + currentWaterAtom + 2;
 				atomsWater[currentWaterAtom + 2].id = beginningID + currentWaterAtom + 3;
 
+				// Assigning molType
+				atomsWater[currentWaterAtom].molType = datafileInfo.maxMolType + 1;
+				atomsWater[currentWaterAtom + 1].molType = datafileInfo.maxMolType + 1;
+				atomsWater[currentWaterAtom + 2].molType = datafileInfo.maxMolType + 1;
+
+				// Assigning atomType
+				atomsWater[currentWaterAtom].atomType = datafileInfo.nAtomTypes + 1;
+				atomsWater[currentWaterAtom + 1].atomType = datafileInfo.nAtomTypes + 2;
+				atomsWater[currentWaterAtom + 2].atomType = datafileInfo.nAtomTypes + 2;
+
+				// Assigning partial charges
+				atomsWater[currentWaterAtom].charge = -0.82;
+				atomsWater[currentWaterAtom + 1].charge = 0.41;
+				atomsWater[currentWaterAtom + 2].charge = 0.41;
+
 				// Resetting the isOverlap variable before checking the distances
 				isOverlap = 0;
 
@@ -517,6 +532,73 @@ DATA_ANGLES *addWaterAngles (DATA_ANGLES *anglesWater, int currentAngleID, int n
 	return anglesWater;
 }
 
+void printModifiedData (FILE *output, DATAFILE_INFO datafileInfo, ATOMIC_MASS *mass, DATA_ATOMS *atoms, DATA_ATOMS *atomsWater, DATA_BONDS *bonds, DATA_BONDS *bondsWater, DATA_ANGLES *angles, DATA_ANGLES *anglesWater, DATA_DIHEDRALS *dihedrals, DATA_IMPROPERS *impropers, int nWater_current, BOUNDS newSolvatedBoundary)
+{
+	fprintf(output, "%s\n\n", "LAMMPS 2005 data file for solvated structure");
+	fprintf(output, "%7d atoms\n", datafileInfo.nAtoms + nWater_current);
+	fprintf(output, "%7d bonds\n", datafileInfo.nBonds + (nWater_current * 2));
+	fprintf(output, "%7d angles\n", datafileInfo.nAngles + nWater_current);
+	fprintf(output, "%7d dihedrals\n", datafileInfo.nDihedrals);
+	fprintf(output, "%7d impropers\n", datafileInfo.nImpropers);
+	fprintf(output, "\n%4d atom types\n", datafileInfo.nAtomTypes);
+	fprintf(output, "%4d bond types\n", datafileInfo.nBondTypes);
+	fprintf(output, "%4d angle types\n", datafileInfo.nAngleTypes);
+	fprintf(output, "%4d dihedral types\n", datafileInfo.nDihedralTypes);
+	fprintf(output, "\n%f %f xlo xhi\n%f %f ylo yhi\n%f %f zlo zhi\n", newSolvatedBoundary.xlo, newSolvatedBoundary.xhi, newSolvatedBoundary.ylo, newSolvatedBoundary.yhi, newSolvatedBoundary.zlo, newSolvatedBoundary.zhi);
+
+	fprintf(output, "\nMasses\n\n");
+	for (int i = 0; i < datafileInfo.nAtoms; ++i) {
+		fprintf(output, "%d %f\n", mass[i].atomType, mass[i].mass); }
+
+	fprintf(output, "\nAtoms\n\n");
+
+	// Printing the atoms in the original data file
+	for (int i = 0; i < datafileInfo.nAtoms; ++i)
+	{
+		fprintf(output, "%d\t%d\t%d\t%f\t%f\t%f\t%f\n", atoms[i].id, atoms[i].molType, atoms[i].atomType, atoms[i].charge, atoms[i].x, atoms[i].y, atoms[i].z);
+	}
+	// Printing the newly added water molecules
+	for (int i = 0; i < nWater_current; ++i)
+	{
+		fprintf(output, "%d\t%d\t%d\t%f\t%f\t%f\t%f\n", atomsWater[i].id, atomsWater[i].molType, atomsWater[i].atomType, atomsWater[i].charge, atomsWater[i].x, atomsWater[i].y, atomsWater[i].z);
+	}
+
+	fprintf(output, "\nBonds\n\n");
+	// Printing bonds from original data file
+	for (int i = 0; i < datafileInfo.nBonds; ++i)
+	{
+		fprintf(output, "\t%d\t%d\t%d\t%d\n", bonds[i].id, bonds[i].bondType, bonds[i].atom1, bonds[i].atom2);
+	}
+
+	// Printing bonds of newly added water molecules
+	for (int i = 0; i < (nWater_current * 2); ++i)
+	{
+		fprintf(output, "\t%d\t%d\t%d\t%d\n", bondsWater[i].id, bondsWater[i].bondType, bondsWater[i].atom1, bondsWater[i].atom2);
+	}
+
+	fprintf(output, "\nAngles\n\n");
+	// Printing angles from original data file
+	for (int i = 0; i < datafileInfo.nAngles; ++i)
+	{
+		fprintf(output, "\t%d\t%d\t%d\t%d\t%d\n", angles[i].id, angles[i].angleType, angles[i].atom1, angles[i].atom2, angles[i].atom3);
+	}
+
+	// Printing angles of newly added water molecules
+	for (int i = 0; i < nWater_current; ++i)
+	{
+		fprintf(output, "\t%d\t%d\t%d\t%d\t%d\n", anglesWater[i].id, anglesWater[i].angleType, anglesWater[i].atom1, anglesWater[i].atom2, anglesWater[i].atom3);
+	}
+
+	fprintf(output, "\nDihedrals\n\n");
+	// Printing dihedrals from original data file
+	for (int i = 0; i < datafileInfo.nDihedrals; ++i)
+	{
+		fprintf(output, "\t%d\t%d\t%d\t%d\t%d\t%d\n", dihedrals[i].id, dihedrals[i].dihedralType, dihedrals[i].atom1, dihedrals[i].atom2, dihedrals[i].atom3, dihedrals[i].atom4);
+	}
+
+	printf("\n\nNOTE: Impropers are not considered by this code...\n\n");
+}
+
 int main(int argc, char const *argv[])
 {
 	FILE *inputData, *inputDump, *output;
@@ -588,7 +670,7 @@ int main(int argc, char const *argv[])
 	anglesWater = addWaterAngles (anglesWater, (datafileInfo.nAngles + 1), nWater_current, (datafileInfo.nAngleTypes + 1), (datafileInfo.nAtoms + 1));
 
 	// Print the final data file (with masses for water)
-	printModifiedData (datafileInfo, atoms, atomsWater, bonds, bondsWater, angles, anglesWater, dihedrals, impropers, nWater_current);
+	printModifiedData (output, datafileInfo, mass, atoms, atomsWater, bonds, bondsWater, angles, anglesWater, dihedrals, impropers, nWater_current, newSolvatedBoundary);
 
 	return 0;
 }
