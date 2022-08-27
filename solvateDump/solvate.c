@@ -449,8 +449,8 @@ DATA_ATOMS *populateWater (DATA_ATOMS *atomsWater, int nWater, BOUNDS dumpfileBo
 				}
 
 				if (isOverlap == 0) {
-					// printf("Adding water... %d/%d                           \r", (int) ((currentWaterAtom + 1) / 3), nWater);
-					// fflush (stdout); 
+					printf("Adding water... %d/%d                           \r", (int) ((currentWaterAtom + 1) / 3), nWater);
+					fflush (stdout); 
 					currentWaterAtom += 3; }
 			}
 		}
@@ -497,7 +497,6 @@ BOUNDS updateBoundary (BOUNDS newSolvatedBoundary, DATA_ATOMS *atomsWater, int n
 	return newSolvatedBoundary;
 }
 
-// addWaterBonds (bondsWater, (datafileInfo.nBonds + 1), (nWater_current * 2), (datafileInfo.nBondTypes + 1), (datafileInfo.nAtoms + 1));
 DATA_BONDS *addWaterBonds (DATA_BONDS *bondsWater, int currentBondID, int nWaterBonds, int bondType, int currentOxygenAtom)
 {	
 	for (int i = 0; i < nWaterBonds; )
@@ -517,12 +516,6 @@ DATA_BONDS *addWaterBonds (DATA_BONDS *bondsWater, int currentBondID, int nWater
 		i += 2;
 	}
 
-	// for (int i = 0; i < nWaterBonds; ++i)
-	// {
-	// 	printf("%d %d %d %d\n", bondsWater[i].id, bondsWater[i].bondType, bondsWater[i].atom1, bondsWater[i].atom2);
-	// }
-
-	// sleep (1000);
 	printf("\nAdded %d new bonds for water molecules...\n", nWaterBonds);
 
 	return bondsWater;
