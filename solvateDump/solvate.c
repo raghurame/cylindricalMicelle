@@ -98,6 +98,8 @@ void readData (FILE *input, DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES 
 	*dihedrals = NULL;
 	*impropers = NULL;
 
+	(*datafile).maxMolType = 0;
+
 	while ((fgets (lineString, 1000, input) != NULL))
 	{
 		if (strstr (lineString, "atoms"))
@@ -213,9 +215,11 @@ void readData (FILE *input, DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES 
 				&(*atoms)[nAtomLine].x, 
 				&(*atoms)[nAtomLine].y, 
 				&(*atoms)[nAtomLine].z);
+			if ((*atoms)[nAtomLine].molType > (*datafile).maxMolType) {
+				(*datafile).maxMolType = (*atoms)[nAtomLine].molType; }
 			nAtomLine++;
-			if (nAtomLine == (*datafile).nAtoms)
-				isAtomLine = 0;
+			if (nAtomLine == (*datafile).nAtoms) {
+				isAtomLine = 0; }
 		}
 
 		if (isBondLine)
@@ -275,11 +279,10 @@ void readData (FILE *input, DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES 
 	printf("\nPrinting boundary information from data file:\n\n  xlo: %f; xhi: %f\n  ylo: %f; yhi: %f\n  zlo: %f; zhi: %f\n", (*datafileBoundary).xlo, (*datafileBoundary).xhi, (*datafileBoundary).ylo, (*datafileBoundary).yhi, (*datafileBoundary).zlo, (*datafileBoundary).zhi);
 	printf("\nFrom input data file:\n\n  nAtoms: %d\n  nBonds: %d\n  nAngles: %d\n  nDihedrals: %d\n  nImpropers: %d\n\n", (*datafile).nAtoms, (*datafile).nBonds, (*datafile).nAngles, (*datafile).nDihedrals, (*datafile).nImpropers);
 	printf("\nMasses:\n\n");
-	for (int i = 0; i < (*datafile).nAtomTypes; ++i)
-	{
-		printf("%d %f\n", (*mass)[i].atomType, (*mass)[i].mass);
-	}
+	for (int i = 0; i < (*datafile).nAtomTypes; ++i) {
+		printf("%d %f\n", (*mass)[i].atomType, (*mass)[i].mass); }
 	printf("\n");
+	printf("Max mol type present in the data file: %d\n\n", (*datafile).maxMolType);
 	rewind (input);
 }
 
@@ -563,8 +566,6 @@ int main(int argc, char const *argv[])
 	DATA_ATOMS *atomsWater;
 	DATA_BONDS *bondsWater;
 	DATA_ANGLES *anglesWater;
-	DATA_DIHEDRALS *dihedralsWater;
-	DATA_IMPROPERS *impropersWater;
 
 	int nWater_max = calculateNWater (dumpfileBoundary), nWater_current = 0;
 
@@ -587,6 +588,7 @@ int main(int argc, char const *argv[])
 	anglesWater = addWaterAngles (anglesWater, (datafileInfo.nAngles + 1), nWater_current, (datafileInfo.nAngleTypes + 1), (datafileInfo.nAtoms + 1));
 
 	// Print the final data file (with masses for water)
+	printModifiedData (datafileInfo, atoms, atomsWater, bonds, bondsWater, angles, anglesWater, dihedrals, impropers, nWater_current);
 
 	return 0;
 }
