@@ -449,14 +449,14 @@ DATA_ATOMS *populateWater (DATA_ATOMS *atomsWater, int nWater, BOUNDS dumpfileBo
 				}
 
 				if (isOverlap == 0) {
-					currentWaterAtom += 3;
-					printf("Adding water... %d/%d                           \r", (int) (currentWaterAtom / 3), nWater);
-					fflush (stdout); }
+					// printf("Adding water... %d/%d                           \r", (int) ((currentWaterAtom + 1) / 3), nWater);
+					// fflush (stdout); 
+					currentWaterAtom += 3; }
 			}
 		}
 	}
 
-	printf("\n\nMax number of water that can be added (based on overall simulation volume): %d\nNumber of water molecules added after checking for overlaps: %d\n\n", nWater, (int) floor (currentWaterAtom / 3));
+	printf("\n\nMax number of water that can be added (based on overall simulation volume): %d\nNumber of water molecules added after checking for overlaps: %d\n\n", nWater, (int) floor ((currentWaterAtom - 3 + 1) / 3));
 
 	// Subtracted 3 to counter the last increment to currentWaterAtom variable
 	// Added 1 because the variable starts from 0
@@ -497,9 +497,10 @@ BOUNDS updateBoundary (BOUNDS newSolvatedBoundary, DATA_ATOMS *atomsWater, int n
 	return newSolvatedBoundary;
 }
 
+// addWaterBonds (bondsWater, (datafileInfo.nBonds + 1), (nWater_current * 2), (datafileInfo.nBondTypes + 1), (datafileInfo.nAtoms + 1));
 DATA_BONDS *addWaterBonds (DATA_BONDS *bondsWater, int currentBondID, int nWaterBonds, int bondType, int currentOxygenAtom)
 {	
-	for (int i = 0; i < nWaterBonds; ++i)
+	for (int i = 0; i < nWaterBonds; )
 	{
 		bondsWater[i].id = currentBondID;
 		bondsWater[i].bondType = bondType;
@@ -507,12 +508,22 @@ DATA_BONDS *addWaterBonds (DATA_BONDS *bondsWater, int currentBondID, int nWater
 		bondsWater[i].atom2 = currentOxygenAtom + 1;
 		currentBondID++;
 
-		bondsWater[i].id = currentBondID;
-		bondsWater[i].bondType = bondType;
-		bondsWater[i].atom1 = currentOxygenAtom;
-		bondsWater[i].atom2 = currentOxygenAtom + 2;
+		bondsWater[i + 1].id = currentBondID;
+		bondsWater[i + 1].bondType = bondType;
+		bondsWater[i + 1].atom1 = currentOxygenAtom;
+		bondsWater[i + 1].atom2 = currentOxygenAtom + 2;
 		currentBondID++;
+		currentOxygenAtom += 3;
+		i += 2;
 	}
+
+	// for (int i = 0; i < nWaterBonds; ++i)
+	// {
+	// 	printf("%d %d %d %d\n", bondsWater[i].id, bondsWater[i].bondType, bondsWater[i].atom1, bondsWater[i].atom2);
+	// }
+
+	// sleep (1000);
+	printf("\nAdded %d new bonds for water molecules...\n", nWaterBonds);
 
 	return bondsWater;
 }
@@ -527,7 +538,10 @@ DATA_ANGLES *addWaterAngles (DATA_ANGLES *anglesWater, int currentAngleID, int n
 		anglesWater[i].atom2 = currentOxygenAtom;
 		anglesWater[i].atom3 = currentOxygenAtom + 2;
 		currentAngleID++;
+		currentOxygenAtom += 3;
 	}
+
+	printf("Added %d new bond angles for water molecules...\n", nWaterAngles);
 
 	return anglesWater;
 }
@@ -535,7 +549,7 @@ DATA_ANGLES *addWaterAngles (DATA_ANGLES *anglesWater, int currentAngleID, int n
 void printModifiedData (FILE *output, DATAFILE_INFO datafileInfo, ATOMIC_MASS *mass, DATA_ATOMS *atoms, DATA_ATOMS *atomsWater, DATA_BONDS *bonds, DATA_BONDS *bondsWater, DATA_ANGLES *angles, DATA_ANGLES *anglesWater, DATA_DIHEDRALS *dihedrals, DATA_IMPROPERS *impropers, int nWater_current, BOUNDS newSolvatedBoundary)
 {
 	fprintf(output, "%s\n\n", "LAMMPS 2005 data file for solvated structure");
-	fprintf(output, "%7d atoms\n", datafileInfo.nAtoms + nWater_current);
+	fprintf(output, "%7d atoms\n", datafileInfo.nAtoms + nWater_current * 3);
 	fprintf(output, "%7d bonds\n", datafileInfo.nBonds + (nWater_current * 2));
 	fprintf(output, "%7d angles\n", datafileInfo.nAngles + nWater_current);
 	fprintf(output, "%7d dihedrals\n", datafileInfo.nDihedrals);
@@ -547,24 +561,25 @@ void printModifiedData (FILE *output, DATAFILE_INFO datafileInfo, ATOMIC_MASS *m
 	fprintf(output, "\n%f %f xlo xhi\n%f %f ylo yhi\n%f %f zlo zhi\n", newSolvatedBoundary.xlo, newSolvatedBoundary.xhi, newSolvatedBoundary.ylo, newSolvatedBoundary.yhi, newSolvatedBoundary.zlo, newSolvatedBoundary.zhi);
 
 	fprintf(output, "\nMasses\n\n");
-	for (int i = 0; i < datafileInfo.nAtoms; ++i) {
-		fprintf(output, "%d %f\n", mass[i].atomType, mass[i].mass); }
+	for (int i = 0; i < datafileInfo.nAtomTypes; ++i) {
+		fprintf(output, "\t%d %f\n", mass[i].atomType, mass[i].mass); }
 
 	fprintf(output, "\nAtoms\n\n");
-
 	// Printing the atoms in the original data file
+	printf("\nPrinting %d + %d atoms...\n", datafileInfo.nAtoms, nWater_current);
 	for (int i = 0; i < datafileInfo.nAtoms; ++i)
 	{
 		fprintf(output, "%d\t%d\t%d\t%f\t%f\t%f\t%f\n", atoms[i].id, atoms[i].molType, atoms[i].atomType, atoms[i].charge, atoms[i].x, atoms[i].y, atoms[i].z);
 	}
 	// Printing the newly added water molecules
-	for (int i = 0; i < nWater_current; ++i)
+	for (int i = 0; i < (nWater_current * 3); ++i)
 	{
 		fprintf(output, "%d\t%d\t%d\t%f\t%f\t%f\t%f\n", atomsWater[i].id, atomsWater[i].molType, atomsWater[i].atomType, atomsWater[i].charge, atomsWater[i].x, atomsWater[i].y, atomsWater[i].z);
 	}
 
 	fprintf(output, "\nBonds\n\n");
 	// Printing bonds from original data file
+	printf("Printing %d + %d bonds...\n", datafileInfo.nBonds, (nWater_current * 2));
 	for (int i = 0; i < datafileInfo.nBonds; ++i)
 	{
 		fprintf(output, "\t%d\t%d\t%d\t%d\n", bonds[i].id, bonds[i].bondType, bonds[i].atom1, bonds[i].atom2);
@@ -573,11 +588,12 @@ void printModifiedData (FILE *output, DATAFILE_INFO datafileInfo, ATOMIC_MASS *m
 	// Printing bonds of newly added water molecules
 	for (int i = 0; i < (nWater_current * 2); ++i)
 	{
-		fprintf(output, "\t%d\t%d\t%d\t%d\n", bondsWater[i].id, bondsWater[i].bondType, bondsWater[i].atom1, bondsWater[i].atom2);
+		fprintf(output, "[%d]\t%d\t%d\t%d\t%d\n", i, bondsWater[i].id, bondsWater[i].bondType, bondsWater[i].atom1, bondsWater[i].atom2);
 	}
 
 	fprintf(output, "\nAngles\n\n");
 	// Printing angles from original data file
+	printf("Printing %d + %d bond angles...\n", datafileInfo.nAngles, nWater_current);
 	for (int i = 0; i < datafileInfo.nAngles; ++i)
 	{
 		fprintf(output, "\t%d\t%d\t%d\t%d\t%d\n", angles[i].id, angles[i].angleType, angles[i].atom1, angles[i].atom2, angles[i].atom3);
@@ -591,6 +607,7 @@ void printModifiedData (FILE *output, DATAFILE_INFO datafileInfo, ATOMIC_MASS *m
 
 	fprintf(output, "\nDihedrals\n\n");
 	// Printing dihedrals from original data file
+	printf("Printing %d dihedrals...\n", datafileInfo.nDihedrals);
 	for (int i = 0; i < datafileInfo.nDihedrals; ++i)
 	{
 		fprintf(output, "\t%d\t%d\t%d\t%d\t%d\t%d\n", dihedrals[i].id, dihedrals[i].dihedralType, dihedrals[i].atom1, dihedrals[i].atom2, dihedrals[i].atom3, dihedrals[i].atom4);
