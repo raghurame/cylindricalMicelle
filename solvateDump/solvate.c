@@ -375,6 +375,8 @@ int calculateNWater (BOUNDS dumpfileBoundary)
 {
 	float xLength = (dumpfileBoundary.xhi - dumpfileBoundary.xlo), yLength = (dumpfileBoundary.yhi - dumpfileBoundary.ylo), zLength = (dumpfileBoundary.zhi - dumpfileBoundary.zlo), avogadroNumber = 6.023, waterDensity = 1.0, molarMass = 18;
 	float nWater_max = (waterDensity * xLength * yLength * zLength * avogadroNumber * 0.1 / molarMass);
+	// Increasing the number of water molecules by 20%
+	nWater_max *= 1.2;
 	return nWater_max;
 }
 
@@ -431,9 +433,9 @@ DATA_ATOMS *populateWater (DATA_ATOMS *atomsWater, int nWater, BOUNDS dumpfileBo
 				atomsWater[currentWaterAtom + 2].atomType = datafileInfo.nAtomTypes + 2;
 
 				// Assigning partial charges
-				atomsWater[currentWaterAtom].charge = -0.82;
-				atomsWater[currentWaterAtom + 1].charge = 0.41;
-				atomsWater[currentWaterAtom + 2].charge = 0.41;
+				atomsWater[currentWaterAtom].charge = -0.84844;
+				atomsWater[currentWaterAtom + 1].charge = 0.42422;
+				atomsWater[currentWaterAtom + 2].charge = 0.42422;
 
 				// Resetting the isOverlap variable before checking the distances
 				isOverlap = 0;
@@ -444,7 +446,7 @@ DATA_ATOMS *populateWater (DATA_ATOMS *atomsWater, int nWater, BOUNDS dumpfileBo
 					distance_H1_mol = sqrt (pow (atomsWater[currentWaterAtom + 1].x - atoms[i].x, 2) + pow (atomsWater[currentWaterAtom + 1].y - atoms[i].y, 2) + pow (atomsWater[currentWaterAtom + 1].z - atoms[i].z, 2));
 					distance_H2_mol = sqrt (pow (atomsWater[currentWaterAtom + 2].x - atoms[i].x, 2) + pow (atomsWater[currentWaterAtom + 2].y - atoms[i].y, 2) + pow (atomsWater[currentWaterAtom + 2].z - atoms[i].z, 2));
 
-					if ((distance_O_mol < 3) || (distance_H1_mol < 3) || (distance_H2_mol < 3)) {
+					if ((distance_O_mol < 2) || (distance_H1_mol < 1.5) || (distance_H2_mol < 1.5)) {
 						isOverlap = 1; }
 				}
 
