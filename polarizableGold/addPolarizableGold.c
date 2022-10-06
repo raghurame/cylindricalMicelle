@@ -335,11 +335,20 @@ DUMP *readLastDumpFrame (char *pipeString, int nAtoms)
 	return traj;
 }
 
-void printDatafile (DATA_ATOMS *atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DATA_DIHEDRALS *dihedrals, DATA_IMPROPERS *impropers, DATAFILE_INFO datafileInfo, BOUNDS datafileBoundary, ATOMIC_MASS *mass, DUMP *goldCoords)
+void printDatafile (DATA_ATOMS *atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DATA_DIHEDRALS *dihedrals, DATA_IMPROPERS *impropers, DATAFILE_INFO datafileInfo, BOUNDS datafileBoundary, ATOMIC_MASS *mass, DUMP *goldCoords, int nGoldAtoms, FILE *output)
 {
+	// Printing the header information
+	fprintf(output, "%s\n\n", "LAMMPS data file containing the original structures and the polarizable gold");
+	fprintf(output, "%d atoms\n%d bonds\n%d angles\n%d dihedrals\n%d impropers\n\n%d atom types\n%d bond types\n%d angle types\n%d dihedral types\n\n%f %f xlo xhi\n%f %f ylo yhi\n%f %f zlo zhi\n\nMasses\n\n", );
+
 	for (int i = 0; i < datafileInfo.nAtoms; ++i)
 	{
-		printf("%f %f %f\n", );
+		fprintf("%f %f %f\n", atoms.x, atoms.y, atoms.z);
+	}
+
+	for (int i = 0; i < nGoldAtoms; ++i)
+	{
+		fprintf(stderr, "%s\n", );
 	}
 }
 
@@ -349,7 +358,7 @@ int main(int argc, char const *argv[])
 	inputData = fopen (argv[1], "r");
 	output = fopen (argv[3], "w");
 
-	int nAtoms = getNatoms (inputGold);
+	int nGoldAtoms = getNatoms (inputGold);
 
 	// Read data file
 	DATA_ATOMS *atoms;
@@ -367,15 +376,15 @@ int main(int argc, char const *argv[])
 	readData (inputData, &atoms, &bonds, &angles, &dihedrals, &impropers, &datafileInfo, &datafileBoundary, &mass);
 
 	DUMP *goldCoords;
-	goldCoords = (DUMP *) malloc (nAtoms * sizeof (DUMP));
+	goldCoords = (DUMP *) malloc (nGoldAtoms * sizeof (DUMP));
 
 	// Reading the last timeframe of gold dump file
 	char *pipe_lastframe;
 	pipe_lastframe = (char *) malloc (50 * sizeof (char));
-	snprintf (pipe_lastframe, 50, "tail -%d %s", nAtoms, argv[2]);
-	goldCoords = readLastDumpFrame (pipe_lastframe, nAtoms);
+	snprintf (pipe_lastframe, 50, "tail -%d %s", nGoldAtoms, argv[2]);
+	goldCoords = readLastDumpFrame (pipe_lastframe, nGoldAtoms);
 
-	printDatafile (atoms, bonds, angles, dihedrals, impropers, datafileInfo, datafileBoundary, mass, goldCoords);
+	printDatafile (atoms, bonds, angles, dihedrals, impropers, datafileInfo, datafileBoundary, mass, goldCoords, nGoldAtoms, output);
 
 	// Create electron cloud and bond information for the gold surface
 
