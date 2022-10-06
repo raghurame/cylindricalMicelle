@@ -335,6 +335,14 @@ DUMP *readLastDumpFrame (char *pipeString, int nAtoms)
 	return traj;
 }
 
+void printDatafile (DATA_ATOMS *atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DATA_DIHEDRALS *dihedrals, DATA_IMPROPERS *impropers, DATAFILE_INFO datafileInfo, BOUNDS datafileBoundary, ATOMIC_MASS *mass, DUMP *goldCoords)
+{
+	for (int i = 0; i < datafileInfo.nAtoms; ++i)
+	{
+		printf("%f %f %f\n", );
+	}
+}
+
 int main(int argc, char const *argv[])
 {
 	FILE *inputData, *output;
@@ -352,20 +360,22 @@ int main(int argc, char const *argv[])
 
 	DATAFILE_INFO datafileInfo;
 
-	BOUNDS datafileBoundary, dumpfileBoundary;
+	BOUNDS datafileBoundary;
 	ATOMIC_MASS *mass;
 
 	// Reading the input data file
 	readData (inputData, &atoms, &bonds, &angles, &dihedrals, &impropers, &datafileInfo, &datafileBoundary, &mass);
 
-	DUMP *traj;
-	traj = (DUMP *) malloc (nAtoms * sizeof (DUMP));
+	DUMP *goldCoords;
+	goldCoords = (DUMP *) malloc (nAtoms * sizeof (DUMP));
 
 	// Reading the last timeframe of gold dump file
 	char *pipe_lastframe;
 	pipe_lastframe = (char *) malloc (50 * sizeof (char));
 	snprintf (pipe_lastframe, 50, "tail -%d %s", nAtoms, argv[2]);
-	traj = readLastDumpFrame (pipe_lastframe, nAtoms);
+	goldCoords = readLastDumpFrame (pipe_lastframe, nAtoms);
+
+	printDatafile (atoms, bonds, angles, dihedrals, impropers, datafileInfo, datafileBoundary, mass, goldCoords);
 
 	// Create electron cloud and bond information for the gold surface
 
