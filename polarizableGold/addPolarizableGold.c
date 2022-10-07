@@ -335,28 +335,228 @@ DUMP *readLastDumpFrame (char *pipeString, int nAtoms)
 	return traj;
 }
 
-void printDatafile (DATA_ATOMS *atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DATA_DIHEDRALS *dihedrals, DATA_IMPROPERS *impropers, DATAFILE_INFO datafileInfo, BOUNDS datafileBoundary, ATOMIC_MASS *mass, DUMP *goldCoords, int nGoldAtoms, FILE *output)
+void printDatafile (DATA_ATOMS *atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DATA_DIHEDRALS *dihedrals, DATA_IMPROPERS *impropers, DATAFILE_INFO datafileInfo, BOUNDS datafileBoundary, ATOMIC_MASS *mass, DUMP *goldCoords, int nGoldAtoms, BOUNDS overallBoundary, FILE *outputData, FILE *outputXYZ)
 {
 	// Printing the header information
-	fprintf(output, "%s\n\n", "LAMMPS data file containing the original structures and the polarizable gold");
-	fprintf(output, "%d atoms\n%d bonds\n%d angles\n%d dihedrals\n%d impropers\n\n%d atom types\n%d bond types\n%d angle types\n%d dihedral types\n\n%f %f xlo xhi\n%f %f ylo yhi\n%f %f zlo zhi\n\nMasses\n\n", );
+	fprintf(outputData, "%s\n\n", "LAMMPS data file containing the original structures and the polarizable gold");
+	fprintf(outputData, "%d atoms\n%d bonds\n%d angles\n%d dihedrals\n%d impropers\n\n%d atom types\n%d bond types\n%d angle types\n%d dihedral types\n\n%f %f xlo xhi\n%f %f ylo yhi\n%f %f zlo zhi\n\nMasses\n\n", datafileInfo.nAtoms + (nGoldAtoms * 2), datafileInfo.nBonds + nGoldAtoms, datafileInfo.nAngles, datafileInfo.nDihedrals, datafileInfo.nImpropers, datafileInfo.nAtomTypes + 2, datafileInfo.nBondTypes + 1, datafileInfo.nAngleTypes, datafileInfo.nDihedralTypes, overallBoundary.xlo, overallBoundary.xhi, overallBoundary.ylo, overallBoundary.yhi, overallBoundary.zlo, overallBoundary.zhi);
 
-	for (int i = 0; i < datafileInfo.nAtoms; ++i)
-	{
-		fprintf("%f %f %f\n", atoms.x, atoms.y, atoms.z);
-	}
+	fprintf(outputXYZ, "%d\n", datafileInfo.nAtoms + (nGoldAtoms * 2));
+	fprintf(outputXYZ, "%s\n", "Dummy comment line");
+
+	// Printing masses
+	for (int i = 0; i < datafileInfo.nAtomTypes; ++i) {
+		fprintf(outputData, "%d %f\n", mass[i].atomType, mass[i].mass); }
+	fprintf(outputData, "%d %f\n", datafileInfo.nAtomTypes + 1, 195.96); // For gold atom
+	fprintf(outputData, "%d %f\n", datafileInfo.nAtomTypes + 2, 1.0); // For electron cloud
+
+	// Printing orignal atoms
+	fprintf(outputData, "\nAtoms\n\n");
+	for (int i = 0; i < datafileInfo.nAtoms; ++i) {
+		fprintf(outputXYZ, "C %f %f %f\n", atoms[i].x, atoms[i].y, atoms[i].z);
+		fprintf(outputData, "%d %d %d %f %f %f %f\n", atoms[i].id, atoms[i].molType, atoms[i].atomType, atoms[i].charge, atoms[i].x, atoms[i].y, atoms[i].z); }
+
+	// Printing gold atoms
+	for (int i = 0; i < nGoldAtoms; ++i) {
+		fprintf(outputXYZ, "C %f %f %f\n", goldCoords[i].x, goldCoords[i].y, goldCoords[i].z);
+		fprintf(outputData, "%d %d %d 1.0 %f %f %f\n", (datafileInfo.nAtoms + i + 1), (datafileInfo.maxMolType + 1), (datafileInfo.nAtomTypes + 1), goldCoords[i].x, goldCoords[i].y, goldCoords[i].z); }
+
+	// Printing the electron cloud
+	for (int i = 0; i < nGoldAtoms; ++i) {
+		fprintf(outputXYZ, "C %f %f %f\n", goldCoords[i].x, goldCoords[i].y, goldCoords[i].z);
+		fprintf(outputData, "%d %d %d -1.0 %f %f %f\n", (datafileInfo.nAtoms + nGoldAtoms + i + 1), (datafileInfo.maxMolType + 2), (datafileInfo.nAtomTypes + 2), goldCoords[i].x, goldCoords[i].y, goldCoords[i].z); }
+
+	// Printing the original bonds
+	fprintf(outputData, "\nBonds\n\n");
+	for (int i = 0; i < datafileInfo.nBonds; ++i) {
+		fprintf(outputData, "%d %d %d %d\n", bonds[i].id, bonds[i].bondType, bonds[i].atom1, bonds[i].atom2); }
+
+	// Printing the bonds in polarizable gold
+	for (int i = 0; i < nGoldAtoms; ++i) {
+		fprintf(outputData, "%d %d %d %d\n", (datafileInfo.nBonds + 1 + i), (datafileInfo.nBondTypes + 1), (datafileInfo.nAtoms + i + 1), (datafileInfo.nAtoms + nGoldAtoms + i + 1)); }
+
+	// Printing the original angles
+	fprintf(outputData, "\nAngles\n\n");
+	for (int i = 0; i < datafileInfo.nAngles; ++i) {
+		fprintf(outputData, "%d %d %d %d %d\n", angles[i].id, angles[i].angleType, angles[i].atom1, angles[i].atom2, angles[i].atom3); }
+
+	// Printing the original dihedrals
+	fprintf(outputData, "\nDihedrals\n\n");
+	for (int i = 0; i < datafileInfo.nDihedrals; ++i) {
+		fprintf(outputData, "%d %d %d %d %d %d\n", dihedrals[i].id, dihedrals[i].dihedralType, dihedrals[i].atom1, dihedrals[i].atom2, dihedrals[i].atom3, dihedrals[i].atom4); }
+
+}
+
+BOUNDS calculateDumpBoundary (DUMP *goldCoords, int nGoldAtoms, BOUNDS goldBoundary)
+{
+	goldBoundary.xlo = 0;
+	goldBoundary.xhi = 0;
+	goldBoundary.ylo = 0;
+	goldBoundary.yhi = 0;
+	goldBoundary.zlo = 0;
+	goldBoundary.zhi = 0;
 
 	for (int i = 0; i < nGoldAtoms; ++i)
 	{
-		fprintf(stderr, "%s\n", );
+		if (i == 0)
+		{
+			goldBoundary.xlo = goldCoords[i].x; goldBoundary.xhi = goldCoords[i].x;
+			goldBoundary.ylo = goldCoords[i].y; goldBoundary.yhi = goldCoords[i].y;
+			goldBoundary.zlo = goldCoords[i].z; goldBoundary.zhi = goldCoords[i].z;
+		}
+		else
+		{
+			if (goldCoords[i].x < goldBoundary.xlo) {
+				goldBoundary.xlo = goldCoords[i].x; }
+			else if (goldCoords[i].x > goldBoundary.xhi) {
+				goldBoundary.xhi = goldCoords[i].x; }
+
+			if (goldCoords[i].y < goldBoundary.ylo) {
+				goldBoundary.ylo = goldCoords[i].y; }
+			else if (goldCoords[i].y > goldBoundary.yhi) {
+				goldBoundary.yhi = goldCoords[i].y; }
+
+			if (goldCoords[i].z < goldBoundary.zlo) {
+				goldBoundary.zlo = goldCoords[i].z; }
+			else if (goldCoords[i].z > goldBoundary.zhi) {
+				goldBoundary.zhi = goldCoords[i].z; }
+		}
 	}
+
+	return goldBoundary;
+}
+
+BOUNDS calculateDataBoundary (DATA_ATOMS *atoms, DATAFILE_INFO datafileInfo, BOUNDS originalBoundary)
+{
+	for (int i = 0; i < datafileInfo.nAtoms; ++i)
+	{
+		if (i == 0)
+		{
+			originalBoundary.xlo = atoms[i].x; originalBoundary.xhi = atoms[i].x;
+			originalBoundary.ylo = atoms[i].y; originalBoundary.yhi = atoms[i].y;
+			originalBoundary.zlo = atoms[i].z; originalBoundary.zhi = atoms[i].z;
+		}
+		else
+		{
+			if (atoms[i].x < originalBoundary.xlo) {
+				originalBoundary.xlo = atoms[i].x; }
+			else if (atoms[i].x > originalBoundary.xhi) {
+				originalBoundary.xhi = atoms[i].x; }
+
+			if (atoms[i].y < originalBoundary.ylo) {
+				originalBoundary.ylo = atoms[i].y; }
+			else if (atoms[i].y > originalBoundary.yhi) 	{
+				originalBoundary.yhi = atoms[i].y; }
+
+			if (atoms[i].z < originalBoundary.zlo) {
+				originalBoundary.zlo = atoms[i].z; }
+			else if (atoms[i].z > originalBoundary.zhi) {
+				originalBoundary.zhi = atoms[i].z; }
+		}
+	}
+	return originalBoundary;
+}
+
+DUMP computeCenterData (DUMP center, DATA_ATOMS *atoms, int nAtoms)
+{
+	center.x = 0; center.y = 0; center.z = 0;
+
+	for (int i = 0; i < nAtoms; ++i)
+	{
+		center.x += atoms[i].x;
+		center.y += atoms[i].y;
+		center.z += atoms[i].z;
+	}
+
+	center.x /= nAtoms;
+	center.y /= nAtoms;
+	center.z /= nAtoms;
+
+	return center;
+}
+
+DUMP computeCenterDump (DUMP center, DUMP *coords, int nAtoms)
+{
+	center.x = 0; center.y = 0; center.z = 0;
+
+	for (int i = 0; i < nAtoms; ++i)
+	{
+		center.x += coords[i].x;
+		center.y += coords[i].y;
+		center.z += coords[i].z;
+	}
+
+	center.x /= nAtoms;
+	center.y /= nAtoms;
+	center.z /= nAtoms;
+
+	return center;
+}
+
+DATA_ATOMS *translateDataAtoms (DATA_ATOMS *atoms, DATAFILE_INFO datafileInfo, DUMP *goldCoords, int nGoldAtoms, BOUNDS goldBoundary, BOUNDS originalBoundary)
+{
+	// Calculating the center for datafile atoms
+	DUMP centerDatafile, centerGold;
+	centerDatafile = computeCenterData (centerDatafile, atoms, datafileInfo.nAtoms);
+	centerGold = computeCenterDump (centerGold, goldCoords, nGoldAtoms);
+
+	printf("Center of mass for gold:\n\nx: %f; y: %f; z: %f\n\nCenter of mass for datafile atoms:\n\nx: %f; y: %f; z: %f\n\n", centerGold.x, centerGold.y, centerGold.z, centerDatafile.x, centerDatafile.y, centerDatafile.z);
+
+	float thresholdDistance = 2.0;
+	float translate_x = (centerGold.x - centerDatafile.x), translate_y = (centerGold.y - centerDatafile.y), translate_z = (goldBoundary.zhi - originalBoundary.zlo) + thresholdDistance;
+
+	for (int i = 0; i < datafileInfo.nAtoms; ++i)
+	{
+		atoms[i].x += translate_x;
+		atoms[i].y += translate_y;
+		atoms[i].z += translate_z;
+	}
+
+	return atoms;
+}
+
+BOUNDS calculateOverallBoundary (BOUNDS newBoundary, BOUNDS goldBoundary, BOUNDS overallBoundary)
+{
+	if (newBoundary.xhi > goldBoundary.xhi)
+		overallBoundary.xhi = newBoundary.xhi;
+	else
+		overallBoundary.xhi = goldBoundary.xhi;
+
+	if (newBoundary.yhi > goldBoundary.yhi)
+		overallBoundary.yhi = newBoundary.yhi;
+	else
+		overallBoundary.yhi = goldBoundary.yhi;
+
+	if (newBoundary.zhi > goldBoundary.zhi)
+		overallBoundary.zhi = newBoundary.zhi;
+	else
+		overallBoundary.zhi = goldBoundary.zhi;
+
+	if (newBoundary.xlo < goldBoundary.xlo)
+		overallBoundary.xlo = newBoundary.xlo;
+	else
+		overallBoundary.xlo = goldBoundary.xlo;
+
+	if (newBoundary.ylo < goldBoundary.ylo)
+		overallBoundary.ylo = newBoundary.ylo;
+	else
+		overallBoundary.ylo = goldBoundary.ylo;
+
+	if (newBoundary.zlo < goldBoundary.zlo)
+		overallBoundary.zlo = newBoundary.zlo;
+	else
+		overallBoundary.zlo = goldBoundary.zlo;
+
+	return overallBoundary;
 }
 
 int main(int argc, char const *argv[])
 {
-	FILE *inputData, *output;
+	FILE *inputData, *inputGold, *outputData, *outputXYZ;
 	inputData = fopen (argv[1], "r");
-	output = fopen (argv[3], "w");
+	inputGold = fopen (argv[2], "r");
+	outputData = fopen (argv[3], "w");
+	outputXYZ = fopen (argv[4], "w");
 
 	int nGoldAtoms = getNatoms (inputGold);
 
@@ -369,7 +569,7 @@ int main(int argc, char const *argv[])
 
 	DATAFILE_INFO datafileInfo;
 
-	BOUNDS datafileBoundary;
+	BOUNDS datafileBoundary, goldBoundary, originalBoundary, newBoundary, overallBoundary;
 	ATOMIC_MASS *mass;
 
 	// Reading the input data file
@@ -384,7 +584,16 @@ int main(int argc, char const *argv[])
 	snprintf (pipe_lastframe, 50, "tail -%d %s", nGoldAtoms, argv[2]);
 	goldCoords = readLastDumpFrame (pipe_lastframe, nGoldAtoms);
 
-	printDatafile (atoms, bonds, angles, dihedrals, impropers, datafileInfo, datafileBoundary, mass, goldCoords, nGoldAtoms, output);
+	goldBoundary = calculateDumpBoundary (goldCoords, nGoldAtoms, goldBoundary);
+	originalBoundary = calculateDataBoundary (atoms, datafileInfo, originalBoundary);
+
+	atoms = translateDataAtoms (atoms, datafileInfo, goldCoords, nGoldAtoms, goldBoundary, originalBoundary);
+	newBoundary = calculateDataBoundary (atoms, datafileInfo, newBoundary);
+	overallBoundary = calculateOverallBoundary (newBoundary, goldBoundary, overallBoundary);
+
+	printf("Overall bounds after adding polarizable gold:\n\n%f %f xlo xhi\n%f %f ylo yhi\n%f %f zlo zhi\n\n", overallBoundary.xlo, overallBoundary.xhi, overallBoundary.ylo, overallBoundary.yhi, overallBoundary.zlo, overallBoundary.zhi);
+
+	printDatafile (atoms, bonds, angles, dihedrals, impropers, datafileInfo, datafileBoundary, mass, goldCoords, nGoldAtoms, overallBoundary, outputData, outputXYZ);
 
 	// Create electron cloud and bond information for the gold surface
 
