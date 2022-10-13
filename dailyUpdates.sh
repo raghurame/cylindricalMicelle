@@ -21,5 +21,6 @@ git add msi2lmp_gcc32.exe
 git add finalStructure.lammps05
 git add solvateDump/
 git add polarizableGold/
+git add replaceTrajectory/
 git commit -m "daily updates"
 git push

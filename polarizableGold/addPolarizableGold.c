@@ -339,7 +339,7 @@ void printDatafile (DATA_ATOMS *atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, D
 {
 	// Printing the header information
 	fprintf(outputData, "%s\n\n", "LAMMPS data file containing the original structures and the polarizable gold");
-	fprintf(outputData, "%d atoms\n%d bonds\n%d angles\n%d dihedrals\n%d impropers\n\n%d atom types\n%d bond types\n%d angle types\n%d dihedral types\n\n%f %f xlo xhi\n%f %f ylo yhi\n%f %f zlo zhi\n\nMasses\n\n", datafileInfo.nAtoms + (nGoldAtoms * 2), datafileInfo.nBonds + nGoldAtoms, datafileInfo.nAngles, datafileInfo.nDihedrals, datafileInfo.nImpropers, datafileInfo.nAtomTypes + 2, datafileInfo.nBondTypes + 1, datafileInfo.nAngleTypes, datafileInfo.nDihedralTypes, overallBoundary.xlo, overallBoundary.xhi, overallBoundary.ylo, overallBoundary.yhi, overallBoundary.zlo, overallBoundary.zhi);
+	fprintf(outputData, "%d atoms\n%d bonds\n%d angles\n%d dihedrals\n%d impropers\n\n%d atom types\n%d bond types\n%d angle types\n%d dihedral types\n\n%f %f xlo xhi\n%f %f ylo yhi\n%f %f zlo zhi\n\nMasses\n\n", datafileInfo.nAtoms + (nGoldAtoms * 2), datafileInfo.nBonds + nGoldAtoms, datafileInfo.nAngles, datafileInfo.nDihedrals, datafileInfo.nImpropers, datafileInfo.nAtomTypes + 2, datafileInfo.nBondTypes + 1, datafileInfo.nAngleTypes, datafileInfo.nDihedralTypes, overallBoundary.xlo - 3.0, overallBoundary.xhi + 3.0, overallBoundary.ylo - 3.0, overallBoundary.yhi + 3.0, overallBoundary.zlo - 3.0, overallBoundary.zhi + 3.0);
 
 	fprintf(outputXYZ, "%d\n", datafileInfo.nAtoms + (nGoldAtoms * 2));
 	fprintf(outputXYZ, "%s\n", "Dummy comment line");
@@ -502,7 +502,7 @@ DATA_ATOMS *translateDataAtoms (DATA_ATOMS *atoms, DATAFILE_INFO datafileInfo, D
 
 	printf("Center of mass for gold:\n\nx: %f; y: %f; z: %f\n\nCenter of mass for datafile atoms:\n\nx: %f; y: %f; z: %f\n\n", centerGold.x, centerGold.y, centerGold.z, centerDatafile.x, centerDatafile.y, centerDatafile.z);
 
-	float thresholdDistance = 2.0;
+	float thresholdDistance = 8.0;
 	float translate_x = (centerGold.x - centerDatafile.x), translate_y = (centerGold.y - centerDatafile.y), translate_z = (goldBoundary.zhi - originalBoundary.zlo) + thresholdDistance;
 
 	for (int i = 0; i < datafileInfo.nAtoms; ++i)
@@ -594,12 +594,6 @@ int main(int argc, char const *argv[])
 	printf("Overall bounds after adding polarizable gold:\n\n%f %f xlo xhi\n%f %f ylo yhi\n%f %f zlo zhi\n\n", overallBoundary.xlo, overallBoundary.xhi, overallBoundary.ylo, overallBoundary.yhi, overallBoundary.zlo, overallBoundary.zhi);
 
 	printDatafile (atoms, bonds, angles, dihedrals, impropers, datafileInfo, datafileBoundary, mass, goldCoords, nGoldAtoms, overallBoundary, outputData, outputXYZ);
-
-	// Create electron cloud and bond information for the gold surface
-
-	// Calculate the combined bounds for gold and surfactant molecules
-
-	// Print the new data file with gold and electron positions
 
 	return 0;
 }
