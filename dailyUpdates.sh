@@ -22,5 +22,6 @@ git add finalStructure.lammps05
 git add solvateDump/
 git add polarizableGold/
 git add replaceTrajectory/
+git add pdb2data/
 git commit -m "daily updates"
 git push

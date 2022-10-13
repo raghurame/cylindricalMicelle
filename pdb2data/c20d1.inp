@@ -1,0 +1,15 @@
+tolerance 2.0
+filetype pdb
+
+output c20d1.pdb
+
+structure CTAB.pdb
+  number 190
+  inside box 0. 0. 12. 60. 60. 100. 
+end structure
+
+structure DDAB.pdb
+  number 10
+  inside box 0. 0. 12. 60. 60. 100. 
+end structure
+
