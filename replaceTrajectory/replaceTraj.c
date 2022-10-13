@@ -56,7 +56,18 @@ DUMP *readLastDumpFrame_full (char *pipeString, int nAtoms)
 
 	while (fgets (lineString, 1000, input) != NULL)
 	{
-		sscanf (lineString, "%d %d %f %f %f %f %f %f %d %d %d\n", &traj_temp[lineCount].id, &traj_temp[lineCount].type, &traj_temp[lineCount].x, &traj_temp[lineCount].y, &traj_temp[lineCount].z, &traj_temp[lineCount].xs, &traj_temp[lineCount].ys, &traj_temp[lineCount].zs, &traj_temp[lineCount].ix, &traj_temp[lineCount].iy, &traj_temp[lineCount].iz);
+		sscanf (lineString, "%d %d %f %f %f %f %f %f %d %d %d\n", 
+			&traj_temp[lineCount].id, 
+			&traj_temp[lineCount].type, 
+			&traj_temp[lineCount].x, 
+			&traj_temp[lineCount].y, 
+			&traj_temp[lineCount].z, 
+			&traj_temp[lineCount].xs, 
+			&traj_temp[lineCount].ys, 
+			&traj_temp[lineCount].zs, 
+			&traj_temp[lineCount].ix, 
+			&traj_temp[lineCount].iy, 
+			&traj_temp[lineCount].iz);
 		lineCount++;
 	}
 
@@ -100,7 +111,12 @@ DUMP *readLastDumpFrame_minimal (char *pipeString, int nAtoms)
 
 	while (fgets (lineString, 1000, input) != NULL)
 	{
-		sscanf (lineString, "%d %d %f %f %f\n", &traj_temp[lineCount].id, &traj_temp[lineCount].type, &traj_temp[lineCount].x, &traj_temp[lineCount].y, &traj_temp[lineCount].z, &traj_temp[lineCount].xs, &traj_temp[lineCount].ys, &traj_temp[lineCount].zs, &traj_temp[lineCount].ix, &traj_temp[lineCount].iy, &traj_temp[lineCount].iz);
+		sscanf (lineString, "%d %d %f %f %f\n", 
+			&traj_temp[lineCount].id, 
+			&traj_temp[lineCount].type, 
+			&traj_temp[lineCount].x, 
+			&traj_temp[lineCount].y, 
+			&traj_temp[lineCount].z);
 		lineCount++;
 	}
 
@@ -115,12 +131,6 @@ DUMP *readLastDumpFrame_minimal (char *pipeString, int nAtoms)
 				traj[i].x = traj_temp[j].x;
 				traj[i].y = traj_temp[j].y;
 				traj[i].z = traj_temp[j].z;
-				traj[i].xs = traj_temp[j].xs;
-				traj[i].ys = traj_temp[j].ys;
-				traj[i].zs = traj_temp[j].zs;
-				traj[i].ix = traj_temp[j].ix;
-				traj[i].iy = traj_temp[j].iy;
-				traj[i].iz = traj_temp[j].iz;
 			}
 		}
 	}
@@ -186,10 +196,25 @@ DUMP computeCenterDump (DUMP center, DUMP *coords, int nAtoms)
 	return center;
 }
 
+int checkNAtoms (DUMP *coords, int nAtoms, int atomType)
+{
+	int nAtoms_ofThatAtomType = 0;
+
+	for (int i = 0; i < nAtoms; ++i)
+	{
+		if (coords[i].type == atomType)
+		{
+			nAtoms_ofThatAtomType++;
+		}
+	}
+
+	return nAtoms_ofThatAtomType;
+}
+
 int main(int argc, char const *argv[])
 {
 	if (argc == 1) 	{
-		(void)printf("\nARGUMENTS:\n~~~~~~~~~~\n\n{~} argv[0] = program\n{~} argv[1] = main lammps dump filename\n{~} argv[2] = atom type to be replaced\n{~} argv[3] = substitute lammps dump filename\n{~} argv[4] = substitute atom type\n\n");
+		(void)printf("\nARGUMENTS:\n~~~~~~~~~~\n\n{~} argv[0] = program\n{~} argv[1] = main lammps dump filename\n{~} argv[2] = atom type to be replaced\n{~} argv[3] = substitute lammps dump filename\n{~} argv[4] = substitute atom type\n{~} argv[5] = output filename.\n\n");
 		exit (1); }
 
 	FILE *inputDump_file, *substituteCoords_file, *output_file;
@@ -197,7 +222,7 @@ int main(int argc, char const *argv[])
 	int atomTypeMain = atoi (argv[2]);
 	substituteCoords_file = fopen (argv[3], "r");
 	int atomTypeSubstitute = atoi (argv[4]);
-	output_file = fopen (argv[3], "w");
+	output_file = fopen (argv[5], "w");
 
 	int nMainAtoms = getNatoms (inputDump_file), nSubstituteAtoms = getNatoms (substituteCoords_file);
 
@@ -212,12 +237,14 @@ int main(int argc, char const *argv[])
 	inputDump_traj = readLastDumpFrame_full (pipe_lastframe, nMainAtoms);
 
 	// Reading the last timeframe of substitute dump file
-	snprintf (pipe_lastframe, 100, "tail -%d %s", nSubstituteAtoms, argv[2]);
+	snprintf (pipe_lastframe, 100, "tail -%d %s", nSubstituteAtoms, argv[3]);
 	substituteAtoms_traj = readLastDumpFrame_minimal (pipe_lastframe, nSubstituteAtoms);
 
 	// Replace a particular atom type in inputDump_file with that present in substituteCoords_file
 	// The number of atoms in both cases must be same, so it can be a one-to-one substitute
+	int nMainAtoms_ofThatAtomType = checkNAtoms (inputDump_traj, nMainAtoms, atomTypeMain), nSubstituteAtoms_ofThatAtomType = checkNAtoms (substituteAtoms_traj, nSubstituteAtoms, atomTypeSubstitute);
 
+	printf("%d %d\n", nMainAtoms_ofThatAtomType, nSubstituteAtoms_ofThatAtomType);
 
 	fclose (inputDump_file);
 	fclose (substituteCoords_file);
