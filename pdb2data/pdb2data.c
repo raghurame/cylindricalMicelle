@@ -337,7 +337,7 @@ typedef struct atomIndices
 	int start, end;
 } ATOM_INDICES;
 
-void printNewData (DATA_ATOMS *atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DATA_DIHEDRALS *dihedrals, DATA_IMPROPERS *impropers, DATAFILE_INFO datafileInfo, BOUNDS datafileBoundary, ATOMIC_MASS *mass, PDB_ATOMS *pdbCoordinates, ATOM_INDICES pdb, ATOM_INDICES datafile)
+void printNewData (DATA_ATOMS *atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DATA_DIHEDRALS *dihedrals, DATA_IMPROPERS *impropers, DATAFILE_INFO datafileInfo, BOUNDS datafileBoundary, ATOMIC_MASS *mass, PDB_ATOMS *pdbCoordinates, ATOM_INDICES pdb, ATOM_INDICES datafile, FILE *outputData, FILE *outputXYZ)
 {
 	int nDataAtomsToReplace = (datafile.end - datafile.start + 1), nPDBAtomsToAdd = (pdb.end - pdb.start + 1);
 	// Printing the header information
@@ -359,6 +359,27 @@ void printNewData (DATA_ATOMS *atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DA
 		datafileBoundary.zlo, 
 		datafileBoundary.zhi);
 
+	fprintf(outputXYZ, "%d\n", datafileInfo.nAtoms);
+	fprintf(outputXYZ, "%s\n", "Dummy comment line");
+
+	// Printing masses
+	for (int i = 0; i < datafileInfo.nAtomTypes; ++i) {
+		fprintf(outputData, "%d %f\n", mass[i].atomType, mass[i].mass); }
+
+	// Printing atoms from data file
+	fprintf(outputData, "\nAtoms\n\n");
+	for (int i = 0; i < datafileInfo.nAtoms; ++i) 
+	{
+		if (((i + 1) >= datafile.start) && ((i + 1) <= datafile.end))
+		{
+			fprintf(outputXYZ, "C %f %f %f\n", atoms[i].x, atoms[i].y, atoms[i].z);
+			fprintf(outputData, "%d %d %d %f %f %f %f\n", atoms[i].id, atoms[i].molType, atoms[i].atomType, atoms[i].charge, atoms[i].x, atoms[i].y, atoms[i].z); 
+		}
+	}
+
+	// Printing atoms from pdb file
+
+
 }
 
 int main(int argc, char const *argv[])
@@ -367,7 +388,7 @@ int main(int argc, char const *argv[])
 		(void)printf("\nARGUMENTS:\n~~~~~~~~~~\n\n{~} argv[0] = program\n{~} argv[1] = input datafile\n{~} argv[2] = starting atom index to replace, in datafile\n{~} argv[3] = final atom index to replace, in datafile\n{~} argv[4] = input pdb filename\n{~} argv[5] = starting atom index to substitute, from pdb file\n{~} argv[6] = final atom index to substitute, from the pdb file.\n\nNOTE: The number of atoms selected in the datafile and the pdb file must match!\n\n");
 		exit (1); }
 
-	FILE *inputData, *inputPDB, *outputData;
+	FILE *inputData, *inputPDB, *outputData, *outputXYZ;
 	inputData = fopen (argv[1], "r");
 	inputPDB = fopen (argv[4], "r");
 
@@ -379,10 +400,13 @@ int main(int argc, char const *argv[])
 
 	int nDataAtomsToReplace = datafile.end - datafile.start + 1, nPDBAtomsToAdd = pdb.end - pdb.start + 1;
 	
-	char *outputDataString;
+	char *outputDataString, *outputXYZstring;
 	outputDataString = (char *) malloc (100 * sizeof (char));
-	snprintf (outputDataString, 100, "%s.mod", argv[1]);
+	outputXYZstring = (char *) malloc (100 * sizeof (char));
+	snprintf (outputDataString, 100, "%s.data", argv[1]);
+	snprintf (outputXYZstring, 100, "%s.xyz", argv[1]);
 	outputData = fopen (outputDataString, "w");
+	outputXYZ = fopen (outputXYZstring, "w");
 
 	// Read data file
 	DATA_ATOMS *atoms;
@@ -408,7 +432,7 @@ int main(int argc, char const *argv[])
 	// Store all the PDB information in PDB_ATOMS variable
 	pdbCoordinates = readPDB (inputPDB, pdbCoordinates, nPDBAtomsToAdd);
 
-	printNewData (atoms, bonds, angles, dihedrals, impropers, datafileInfo, datafileBoundary, mass, pdbCoordinates, pdb, datafile);
+	printNewData (atoms, bonds, angles, dihedrals, impropers, datafileInfo, datafileBoundary, mass, pdbCoordinates, pdb, datafile, outputData, outputXYZ);
 
 	fclose (inputData);
 	fclose (inputPDB);
