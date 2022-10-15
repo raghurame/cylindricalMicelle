@@ -337,7 +337,7 @@ typedef struct atomIndices
 	int start, end;
 } ATOM_INDICES;
 
-void printNewData (DATA_ATOMS *atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DATA_DIHEDRALS *dihedrals, DATA_IMPROPERS *impropers, DATAFILE_INFO datafileInfo, BOUNDS datafileBoundary, ATOMIC_MASS *mass, PDB_ATOMS *pdbCoordinates, ATOM_INDICES pdb, ATOM_INDICES datafile, FILE *outputData, FILE *outputXYZ)
+void printNewData (DATA_ATOMS *atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DATA_DIHEDRALS *dihedrals, DATA_IMPROPERS *impropers, DATAFILE_INFO datafileInfo, BOUNDS overallBoundary, ATOMIC_MASS *mass, PDB_ATOMS *pdbCoordinates, ATOM_INDICES pdb, ATOM_INDICES datafile, FILE *outputData, FILE *outputXYZ)
 {
 	int nDataAtomsToReplace = (datafile.end - datafile.start + 1), nPDBAtomsToAdd = (pdb.end - pdb.start + 1);
 	// Printing the header information
@@ -352,12 +352,12 @@ void printNewData (DATA_ATOMS *atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DA
 		datafileInfo.nBondTypes, 
 		datafileInfo.nAngleTypes, 
 		datafileInfo.nDihedralTypes, 
-		datafileBoundary.xlo, 
-		datafileBoundary.xhi, 
-		datafileBoundary.ylo, 
-		datafileBoundary.yhi, 
-		datafileBoundary.zlo, 
-		datafileBoundary.zhi);
+		overallBoundary.xlo, 
+		overallBoundary.xhi, 
+		overallBoundary.ylo, 
+		overallBoundary.yhi, 
+		overallBoundary.zlo, 
+		overallBoundary.zhi);
 
 	fprintf(outputXYZ, "%d\n", datafileInfo.nAtoms);
 	fprintf(outputXYZ, "%s\n", "Dummy comment line");
@@ -368,18 +368,137 @@ void printNewData (DATA_ATOMS *atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DA
 
 	// Printing atoms from data file
 	fprintf(outputData, "\nAtoms\n\n");
+
+	int pdbIndex = 0;
+
 	for (int i = 0; i < datafileInfo.nAtoms; ++i) 
 	{
+		// The code within this 'if' condition only replaces the x, y, z coordinates.
+		// Other quantities are kept the same
 		if (((i + 1) >= datafile.start) && ((i + 1) <= datafile.end))
+		{
+			fprintf(outputXYZ, "C %f %f %f\n", pdbCoordinates[i].x, pdbCoordinates[i].y, pdbCoordinates[i].z);
+			fprintf(outputData, "%d %d %d %f %f %f %f\n", atoms[i].id, atoms[i].molType, atoms[i].atomType, atoms[i].charge, pdbCoordinates[pdbIndex].x, pdbCoordinates[pdbIndex].y, pdbCoordinates[pdbIndex].z); 
+			pdbIndex++;
+		}
+		else
 		{
 			fprintf(outputXYZ, "C %f %f %f\n", atoms[i].x, atoms[i].y, atoms[i].z);
 			fprintf(outputData, "%d %d %d %f %f %f %f\n", atoms[i].id, atoms[i].molType, atoms[i].atomType, atoms[i].charge, atoms[i].x, atoms[i].y, atoms[i].z); 
 		}
 	}
 
-	// Printing atoms from pdb file
+	// Printing bonds
+	fprintf(outputData, "\nBonds\n\n");
+	for (int i = 0; i < datafileInfo.nBonds; ++i) {
+		fprintf(outputData, "%d %d %d %d\n", bonds[i].id, bonds[i].bondType, bonds[i].atom1, bonds[i].atom2); }
 
+	// Printing angles
+	fprintf(outputData, "\nAngles\n\n");
+	for (int i = 0; i < datafileInfo.nAngles; ++i) {
+		fprintf(outputData, "%d %d %d %d %d\n", angles[i].id, angles[i].angleType, angles[i].atom1, angles[i].atom2, angles[i].atom3); }
 
+	// Printing dihedrals
+	fprintf(outputData, "\nDihedrals\n\n");
+	for (int i = 0; i < datafileInfo.nDihedrals; ++i) {
+		fprintf(outputData, "%d %d %d %d %d %d\n", dihedrals[i].id, dihedrals[i].dihedralType, dihedrals[i].atom1, dihedrals[i].atom2, dihedrals[i].atom3, dihedrals[i].atom4); }
+
+}
+
+BOUNDS findPDBboundary (PDB_ATOMS *pdbCoordinates, int nPDBAtomsToAdd, BOUNDS pdbBoundary)
+{
+	pdbBoundary.xlo = 0;
+	pdbBoundary.xhi = 0;
+	pdbBoundary.ylo = 0;
+	pdbBoundary.yhi = 0;
+
+	for (int i = 0; i < nPDBAtomsToAdd; ++i)
+	{
+		if (i == 0)
+		{
+			pdbBoundary.xlo = pdbCoordinates[i].x; pdbBoundary.xhi = pdbCoordinates[i].x;
+			pdbBoundary.ylo = pdbCoordinates[i].y; pdbBoundary.yhi = pdbCoordinates[i].y;
+			pdbBoundary.zlo = pdbCoordinates[i].z; pdbBoundary.zhi = pdbCoordinates[i].z;
+		}
+		else
+		{
+			if (pdbCoordinates[i].x < pdbBoundary.xlo) {
+				pdbBoundary.xlo = pdbCoordinates[i].x; }
+			else if (pdbCoordinates[i].x > pdbBoundary.xhi) {
+				pdbBoundary.xhi = pdbCoordinates[i].x; }
+
+			if (pdbCoordinates[i].y < pdbBoundary.ylo) {
+				pdbBoundary.ylo = pdbCoordinates[i].y; }
+			else if (pdbCoordinates[i].y > pdbBoundary.yhi) {
+				pdbBoundary.yhi = pdbCoordinates[i].y; }
+
+			if (pdbCoordinates[i].z < pdbBoundary.zlo) {
+				pdbBoundary.zlo = pdbCoordinates[i].z; }
+			else if (pdbCoordinates[i].z > pdbBoundary.zhi) {
+				pdbBoundary.zhi = pdbCoordinates[i].z; }
+		}
+	}
+
+	return pdbBoundary;
+}
+
+BOUNDS getOverallBoundary (BOUNDS overallBoundary, BOUNDS datafileBoundary, BOUNDS pdbBoundary)
+{
+	printf("Boundary of datafile:\n\nxlo: %f; xhi: %f;\nylo: %f; yhi: %f;\nzlo: %f; zhi: %f;\n", 
+		datafileBoundary.xlo, 
+		datafileBoundary.xhi, 
+		datafileBoundary.ylo, 
+		datafileBoundary.yhi, 
+		datafileBoundary.zlo, 
+		datafileBoundary.zhi);
+
+	printf("Boundary of PDB file:\n\nxlo: %f; xhi: %f;\nylo: %f; yhi: %f;\nzlo: %f; zhi: %f;\n", 
+		pdbBoundary.xlo, 
+		pdbBoundary.xhi, 
+		pdbBoundary.ylo, 
+		pdbBoundary.yhi, 
+		pdbBoundary.zlo, 
+		pdbBoundary.zhi);
+
+	if (datafileBoundary.xlo < pdbBoundary.xlo) {
+		overallBoundary.xlo = datafileBoundary.xlo; }
+	else {
+		overallBoundary.xlo = pdbBoundary.xlo; }
+
+	if (datafileBoundary.ylo < pdbBoundary.ylo) {
+		overallBoundary.ylo = datafileBoundary.ylo; }
+	else {
+		overallBoundary.ylo = pdbBoundary.ylo; }
+
+	if (datafileBoundary.zlo < pdbBoundary.zlo) {
+		overallBoundary.zlo = datafileBoundary.zlo; }
+	else {
+		overallBoundary.zlo = pdbBoundary.zlo; }
+
+	if (datafileBoundary.xhi < pdbBoundary.xhi) {
+		overallBoundary.xhi = datafileBoundary.xhi; }
+	else {
+		overallBoundary.xhi = pdbBoundary.xhi; }
+
+	if (datafileBoundary.yhi < pdbBoundary.yhi) {
+		overallBoundary.yhi = datafileBoundary.yhi; }
+	else {
+		overallBoundary.yhi = pdbBoundary.yhi; }
+
+	if (datafileBoundary.zhi < pdbBoundary.zhi) {
+		overallBoundary.zhi = datafileBoundary.zhi; }
+	else {
+		overallBoundary.zhi = pdbBoundary.zhi; }
+
+	printf("Overall boundary:\n\nxlo: %f; xhi: %f;\nylo: %f; yhi: %f;\nzlo: %f; zhi: %f;\n", 
+		overallBoundary.xlo, 
+		overallBoundary.xhi, 
+		overallBoundary.ylo, 
+		overallBoundary.yhi, 
+		overallBoundary.zlo, 
+		overallBoundary.zhi);
+
+	return overallBoundary;
 }
 
 int main(int argc, char const *argv[])
@@ -399,6 +518,12 @@ int main(int argc, char const *argv[])
 	pdb.end = atoi (argv[6]);
 
 	int nDataAtomsToReplace = datafile.end - datafile.start + 1, nPDBAtomsToAdd = pdb.end - pdb.start + 1;
+
+	if (nDataAtomsToReplace != nPDBAtomsToAdd)
+	{
+		printf("ERROR: Number of atoms specified are different between PDB and Datafile...\n\n");
+		exit (1);
+	}
 	
 	char *outputDataString, *outputXYZstring;
 	outputDataString = (char *) malloc (100 * sizeof (char));
@@ -417,7 +542,7 @@ int main(int argc, char const *argv[])
 
 	DATAFILE_INFO datafileInfo;
 
-	BOUNDS datafileBoundary, goldBoundary, originalBoundary, newBoundary, overallBoundary;
+	BOUNDS datafileBoundary, pdbBoundary, overallBoundary;
 	ATOMIC_MASS *mass;
 
 	// Reading the input data file
@@ -431,8 +556,11 @@ int main(int argc, char const *argv[])
 
 	// Store all the PDB information in PDB_ATOMS variable
 	pdbCoordinates = readPDB (inputPDB, pdbCoordinates, nPDBAtomsToAdd);
+	pdbBoundary = findPDBboundary (pdbCoordinates, nPDBAtomsToAdd, pdbBoundary);
 
-	printNewData (atoms, bonds, angles, dihedrals, impropers, datafileInfo, datafileBoundary, mass, pdbCoordinates, pdb, datafile, outputData, outputXYZ);
+	overallBoundary = getOverallBoundary (overallBoundary, datafileBoundary, pdbBoundary);
+
+	printNewData (atoms, bonds, angles, dihedrals, impropers, datafileInfo, overallBoundary, mass, pdbCoordinates, pdb, datafile, outputData, outputXYZ);
 
 	fclose (inputData);
 	fclose (inputPDB);

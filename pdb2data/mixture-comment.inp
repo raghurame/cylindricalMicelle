@@ -5,11 +5,11 @@ output mixture.pdb
 
 structure CTAB.pdb
   number 167
-  inside box 0. 0. 12. 60. 60. 100. 
+  inside box 0. 0. 16. 60. 60. 130. 
 end structure
 
 structure DDAB.pdb
   number 33
-  inside box 0. 0. 12. 60. 60. 100. 
+  inside box 0. 0. 16. 60. 60. 130. 
 end structure
 
