@@ -560,6 +560,11 @@ int main(int argc, char const *argv[])
 
 	overallBoundary = getOverallBoundary (overallBoundary, datafileBoundary, pdbBoundary);
 
+	// Assgin molType for all the atoms based on the difference between current Br and the previous Br atoms.
+	// Then replace the coordinates if the molType matches.
+	// If the molType does not match, then iterate forward and check again.
+	// If the end of array is reached, then start from the beginning of the array (cycle through).
+
 	printNewData (atoms, bonds, angles, dihedrals, impropers, datafileInfo, overallBoundary, mass, pdbCoordinates, pdb, datafile, outputData, outputXYZ);
 
 	fclose (inputData);
