@@ -1,0 +1,29 @@
+Reading LAMMPS data file...
+
+Printing boundary information from data file:
+
+  xlo: -48.292946; xhi: 106.886055
+  ylo: -3.000000; yhi: 64.865799
+  zlo: -3.000000; zhi: 90.655273
+
+From input data file:
+
+  nAtoms: 19698
+  nBonds: 15833
+  nAngles: 24336
+  nDihedrals: 34704
+  nImpropers: 0
+
+
+Masses:
+
+1 12.011150
+2 14.006700
+3 12.011150
+4 1.007970
+5 79.908997
+6 195.960007
+7 1.000000
+
+Max mol type present in the data file: 2
+

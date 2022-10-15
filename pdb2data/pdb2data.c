@@ -79,6 +79,8 @@ typedef struct mass
 
 void readData (FILE *input, DATA_ATOMS **atoms, DATA_BONDS **bonds, DATA_ANGLES **angles, DATA_DIHEDRALS **dihedrals, DATA_IMPROPERS **impropers, DATAFILE_INFO *datafile, BOUNDS *datafileBoundary, ATOMIC_MASS **mass)
 {
+	rewind (input);
+
 	printf("Reading LAMMPS data file...\n");
 
 	int isAtomLine = 0, /*nAtoms = -1,*/ nAtomLine = 0;
@@ -317,6 +319,7 @@ PDB_ATOMS *readPDB (FILE *inputPDB, PDB_ATOMS *pdbCoordinates, int nPDBAtomsToAd
 		}
 	}
 
+	rewind (inputPDB);
 	return pdbCoordinates;
 }
 
@@ -373,19 +376,8 @@ void printNewData (DATA_ATOMS *atoms, DATA_BONDS *bonds, DATA_ANGLES *angles, DA
 
 	for (int i = 0; i < datafileInfo.nAtoms; ++i) 
 	{
-		// The code within this 'if' condition only replaces the x, y, z coordinates.
-		// Other quantities are kept the same
-		if (((i + 1) >= datafile.start) && ((i + 1) <= datafile.end))
-		{
-			fprintf(outputXYZ, "C %f %f %f\n", pdbCoordinates[i].x, pdbCoordinates[i].y, pdbCoordinates[i].z);
-			fprintf(outputData, "%d %d %d %f %f %f %f\n", atoms[i].id, atoms[i].molType, atoms[i].atomType, atoms[i].charge, pdbCoordinates[pdbIndex].x, pdbCoordinates[pdbIndex].y, pdbCoordinates[pdbIndex].z); 
-			pdbIndex++;
-		}
-		else
-		{
-			fprintf(outputXYZ, "C %f %f %f\n", atoms[i].x, atoms[i].y, atoms[i].z);
-			fprintf(outputData, "%d %d %d %f %f %f %f\n", atoms[i].id, atoms[i].molType, atoms[i].atomType, atoms[i].charge, atoms[i].x, atoms[i].y, atoms[i].z); 
-		}
+		fprintf(outputXYZ, "C %f %f %f\n", atoms[i].x, atoms[i].y, atoms[i].z);
+		fprintf(outputData, "%d %d %d %f %f %f %f\n", atoms[i].id, atoms[i].molType, atoms[i].atomType, atoms[i].charge, atoms[i].x, atoms[i].y, atoms[i].z); 
 	}
 
 	// Printing bonds
@@ -444,21 +436,21 @@ BOUNDS findPDBboundary (PDB_ATOMS *pdbCoordinates, int nPDBAtomsToAdd, BOUNDS pd
 
 BOUNDS getOverallBoundary (BOUNDS overallBoundary, BOUNDS datafileBoundary, BOUNDS pdbBoundary)
 {
-	printf("Boundary of datafile:\n\nxlo: %f; xhi: %f;\nylo: %f; yhi: %f;\nzlo: %f; zhi: %f;\n", 
-		datafileBoundary.xlo, 
-		datafileBoundary.xhi, 
-		datafileBoundary.ylo, 
-		datafileBoundary.yhi, 
-		datafileBoundary.zlo, 
-		datafileBoundary.zhi);
+	// printf("\nBoundary of datafile:\n\nxlo: %f; xhi: %f;\nylo: %f; yhi: %f;\nzlo: %f; zhi: %f;\n", 
+	// 	datafileBoundary.xlo, 
+	// 	datafileBoundary.xhi, 
+	// 	datafileBoundary.ylo, 
+	// 	datafileBoundary.yhi, 
+	// 	datafileBoundary.zlo, 
+	// 	datafileBoundary.zhi);
 
-	printf("Boundary of PDB file:\n\nxlo: %f; xhi: %f;\nylo: %f; yhi: %f;\nzlo: %f; zhi: %f;\n", 
-		pdbBoundary.xlo, 
-		pdbBoundary.xhi, 
-		pdbBoundary.ylo, 
-		pdbBoundary.yhi, 
-		pdbBoundary.zlo, 
-		pdbBoundary.zhi);
+	// printf("\nBoundary of PDB file:\n\nxlo: %f; xhi: %f;\nylo: %f; yhi: %f;\nzlo: %f; zhi: %f;\n", 
+	// 	pdbBoundary.xlo, 
+	// 	pdbBoundary.xhi, 
+	// 	pdbBoundary.ylo, 
+	// 	pdbBoundary.yhi, 
+	// 	pdbBoundary.zlo, 
+	// 	pdbBoundary.zhi);
 
 	if (datafileBoundary.xlo < pdbBoundary.xlo) {
 		overallBoundary.xlo = datafileBoundary.xlo; }
@@ -490,15 +482,122 @@ BOUNDS getOverallBoundary (BOUNDS overallBoundary, BOUNDS datafileBoundary, BOUN
 	else {
 		overallBoundary.zhi = pdbBoundary.zhi; }
 
-	printf("Overall boundary:\n\nxlo: %f; xhi: %f;\nylo: %f; yhi: %f;\nzlo: %f; zhi: %f;\n", 
-		overallBoundary.xlo, 
-		overallBoundary.xhi, 
-		overallBoundary.ylo, 
-		overallBoundary.yhi, 
-		overallBoundary.zlo, 
-		overallBoundary.zhi);
+	// printf("\nOverall boundary:\n\nxlo: %f; xhi: %f;\nylo: %f; yhi: %f;\nzlo: %f; zhi: %f;\n", 
+	// 	overallBoundary.xlo, 
+	// 	overallBoundary.xhi, 
+	// 	overallBoundary.ylo, 
+	// 	overallBoundary.yhi, 
+	// 	overallBoundary.zlo, 
+	// 	overallBoundary.zhi);
 
 	return overallBoundary;
+}
+
+DATA_ATOMS *assignMolType (DATA_ATOMS *atoms, DATAFILE_INFO datafileInfo)
+{
+	int previousBromine = 0, currentBromine, molLength;
+	int atomTypeBr = 5;
+
+	for (int i = 0; i < datafileInfo.nAtoms; ++i)
+	{
+		if (atoms[i].atomType == atomTypeBr)
+		{
+			currentBromine = i + 1;
+
+			// Assigning molType
+			for (int j = previousBromine; j < currentBromine; ++j)
+			{
+				if ((currentBromine - previousBromine) == 63)
+				{
+					atoms[j].molType = 1;
+				}
+				else if ((currentBromine - previousBromine) == 84)
+				{
+					atoms[j].molType = 2;
+				}
+			}
+
+			previousBromine = currentBromine;
+		}
+	}
+
+	return atoms;
+}
+
+DATA_ATOMS *replaceAtoms (DATA_ATOMS *atoms, DATAFILE_INFO datafileInfo, PDB_ATOMS *pdbCoordinates, int nPDBAtoms)
+{
+	int datafileIndex = 0, pdbIndex = 0;
+	int nAtoms_CTAB = 63, nAtoms_DDAB = 84;
+
+	while (1)
+	{
+		if ((datafileIndex < datafileInfo.nAtoms) && (pdbIndex < nPDBAtoms))
+		{
+			if (atoms[datafileIndex].molType == 1 && strstr (pdbCoordinates[pdbIndex].molName, "CTA"))
+			{
+				for (int i = 0; i < nAtoms_CTAB; ++i)
+				{
+					atoms[datafileIndex].x = pdbCoordinates[pdbIndex].x;
+					atoms[datafileIndex].y = pdbCoordinates[pdbIndex].y;
+					atoms[datafileIndex].z = pdbCoordinates[pdbIndex].z;
+
+					datafileIndex++; pdbIndex++;
+				}
+			}
+			else if ((atoms[datafileIndex].molType == 2) && strstr (pdbCoordinates[pdbIndex].molName, "DDA"))
+			{
+				for (int i = 0; i < nAtoms_DDAB; ++i)
+				{
+					atoms[datafileIndex].x = pdbCoordinates[pdbIndex].x;
+					atoms[datafileIndex].y = pdbCoordinates[pdbIndex].y;
+					atoms[datafileIndex].z = pdbCoordinates[pdbIndex].z;
+
+					datafileIndex++; pdbIndex++;
+				}
+			}
+			else
+			{
+				if (strstr (pdbCoordinates[pdbIndex].molName, "CTA"))
+				{
+					pdbIndex += nAtoms_CTAB;
+				}
+				else if (strstr (pdbCoordinates[pdbIndex].molName, "DDA"))
+				{
+					pdbIndex += nAtoms_DDAB;
+				}
+			}
+		}
+
+		if (pdbIndex == nPDBAtoms)
+		{
+			pdbIndex = 0;
+		}
+
+		if (datafileIndex >= datafileInfo.nAtoms)
+		{
+			goto leaveThisWhileLoop;
+		}
+	}
+
+	leaveThisWhileLoop: ;
+
+	return atoms;
+}
+
+int findNPDBAtoms (FILE *inputPDB)
+{
+	rewind (inputPDB);
+
+	int nLines = 0;
+	char lineString[2000];
+
+	while (fgets (lineString, 2000, inputPDB) != NULL)
+	{
+		nLines++;
+	}
+
+	rewind (inputPDB);
+	return nLines;
 }
 
 int main(int argc, char const *argv[])
@@ -517,11 +616,17 @@ int main(int argc, char const *argv[])
 	pdb.start = atoi (argv[5]);
 	pdb.end = atoi (argv[6]);
 
-	int nDataAtomsToReplace = datafile.end - datafile.start + 1, nPDBAtomsToAdd = pdb.end - pdb.start + 1;
+	int nDataAtomsToReplace = datafile.end - datafile.start + 1, nPDBAtomsToAdd = pdb.end - pdb.start + 1, nPDBAtomsAvailable = findNPDBAtoms (inputPDB);
 
 	if (nDataAtomsToReplace != nPDBAtomsToAdd)
 	{
 		printf("ERROR: Number of atoms specified are different between PDB and Datafile...\n\n");
+		exit (1);
+	}
+
+	if (nPDBAtomsToAdd < nPDBAtomsAvailable)
+	{
+		printf("ERROR: The number of selected atoms in PDB file is greater than the available atoms.\n");
 		exit (1);
 	}
 	
@@ -542,7 +647,7 @@ int main(int argc, char const *argv[])
 
 	DATAFILE_INFO datafileInfo;
 
-	BOUNDS datafileBoundary, pdbBoundary, overallBoundary;
+	BOUNDS datafileBoundary, pdbBoundary /*, overallBoundary*/;
 	ATOMIC_MASS *mass;
 
 	// Reading the input data file
@@ -556,19 +661,24 @@ int main(int argc, char const *argv[])
 
 	// Store all the PDB information in PDB_ATOMS variable
 	pdbCoordinates = readPDB (inputPDB, pdbCoordinates, nPDBAtomsToAdd);
+
 	pdbBoundary = findPDBboundary (pdbCoordinates, nPDBAtomsToAdd, pdbBoundary);
 
-	overallBoundary = getOverallBoundary (overallBoundary, datafileBoundary, pdbBoundary);
+	// overallBoundary = getOverallBoundary (overallBoundary, datafileBoundary, pdbBoundary);
 
-	// Assgin molType for all the atoms based on the difference between current Br and the previous Br atoms.
+	atoms = assignMolType (atoms, datafileInfo);
+
 	// Then replace the coordinates if the molType matches.
 	// If the molType does not match, then iterate forward and check again.
 	// If the end of array is reached, then start from the beginning of the array (cycle through).
 
-	printNewData (atoms, bonds, angles, dihedrals, impropers, datafileInfo, overallBoundary, mass, pdbCoordinates, pdb, datafile, outputData, outputXYZ);
+	atoms = replaceAtoms (atoms, datafileInfo, pdbCoordinates, nPDBAtomsAvailable);
 
-	fclose (inputData);
-	fclose (inputPDB);
-	fclose (outputData);
+	printNewData (atoms, bonds, angles, dihedrals, impropers, datafileInfo, datafileBoundary, mass, pdbCoordinates, pdb, datafile, outputData, outputXYZ);
+
+	// fclose (inputData);
+	// fclose (inputPDB);
+	// fclose (outputData);
+	// fclose (outputXYZ);
 	return 0;
 }
