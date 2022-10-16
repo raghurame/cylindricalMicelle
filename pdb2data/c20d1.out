@@ -2,14 +2,14 @@ Reading LAMMPS data file...
 
 Printing boundary information from data file:
 
-  xlo: -48.738258; xhi: 106.440742
-  ylo: -3.000000; yhi: 64.887184
-  zlo: -3.000000; zhi: 96.678406
+  xlo: -48.244907; xhi: 106.934097
+  ylo: -3.000000; yhi: 64.939980
+  zlo: -3.000000; zhi: 96.387703
 
 From input data file:
 
-  nAtoms: 19740
-  nBonds: 15875
+  nAtoms: 19992
+  nBonds: 16001
   nAngles: 24420
   nDihedrals: 34830
   nImpropers: 0
