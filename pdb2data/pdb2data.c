@@ -536,6 +536,22 @@ DATA_ATOMS *assignMolType (DATA_ATOMS *atoms, DATAFILE_INFO datafileInfo)
 		}
 	}
 
+	int nCTAB = 0, nDDAB = 0;
+	for (int i = 0; i < datafileInfo.nAtoms; ++i)
+	{
+		if (atoms[i].atomType == atomTypeBr && atoms[i].molType == 1)
+		{
+			nCTAB++;
+		}
+		if (atoms[i].atomType == atomTypeBr && atoms[i].molType == 2)
+		{
+			nDDAB++;
+		}
+	}
+
+	printf("Number od CTAB detected in datafile: %d\n", nCTAB);
+	printf("Number of DDAB detected in datafile: %d\n", nDDAB);
+
 	return atoms;
 }
 
@@ -564,46 +580,105 @@ DATA_ATOMS *replaceAtoms (DATA_ATOMS *atoms, DATAFILE_INFO datafileInfo, PDB_ATO
 
 				if (atoms[datafileIndex].molType == 1 && strstr (pdbCoordinates[pdbIndex].molName, "CTA"))
 				{
-					printf("\nMatched with CTAB and molType = 1. Iterating for the next %d times\n", nAtoms_CTAB);
-					fflush (stdout);
-					for (int i = 0; i < nAtoms_CTAB; ++i)
+					if (pdbIndex == 0)
 					{
-						atoms[datafileIndex].x = pdbCoordinates[pdbIndex].x;
-						atoms[datafileIndex].y = pdbCoordinates[pdbIndex].y;
-						atoms[datafileIndex].z = pdbCoordinates[pdbIndex].z;
+						printf("\nMatched with CTAB and molType = 1 at pdbIndex = %d. Iterating for the next %d times\n", pdbIndex, nAtoms_CTAB);
+						fflush (stdout);
+						usleep (100000);
+						for (int i = 0; i < nAtoms_CTAB; ++i)
+						{
+							atoms[datafileIndex].x = pdbCoordinates[pdbIndex].x;
+							atoms[datafileIndex].y = pdbCoordinates[pdbIndex].y;
+							atoms[datafileIndex].z = pdbCoordinates[pdbIndex].z;
 
-						datafileIndex++; pdbIndex++;
+							// snprintf (pdbCoordinates[pdbIndex].molName, 2, "  ");
 
-						// printf("%d\n", datafileIndex);
-						// fflush (stdout);
+							datafileIndex++; pdbIndex++;
 
-						if (pdbIndex >= nPDBAtoms) {
-							pdbIndex = 0; }
-						if (datafileIndex >= datafileInfo.nAtoms) {
-							goto leaveThisWhileLoop; }
+							// printf("%d\n", datafileIndex);
+							// fflush (stdout);
+
+							if (pdbIndex >= nPDBAtoms) {
+								pdbIndex = 0; }
+							if (datafileIndex >= datafileInfo.nAtoms) {
+								goto leaveThisWhileLoop; }
+						}
 					}
-
-				}
-				else if ((atoms[datafileIndex].molType == 2) && strstr (pdbCoordinates[pdbIndex].molName, "DDA"))
-				{
-					printf("\nMatched with DDAB and molType = 2. Iterating for the next %d times\n", nAtoms_DDAB);
-					fflush (stdout);
-
-					for (int i = 0; i < nAtoms_DDAB; ++i)
+					else if (((pdbCoordinates[pdbIndex].molType - pdbCoordinates[pdbIndex - 1].molType) == 1))
 					{
-						atoms[datafileIndex].x = pdbCoordinates[pdbIndex].x;
-						atoms[datafileIndex].y = pdbCoordinates[pdbIndex].y;
-						atoms[datafileIndex].z = pdbCoordinates[pdbIndex].z;
+						printf("\nMatched with CTAB and molType = 1 at pdbIndex = %d. Iterating for the next %d times\n", pdbIndex, nAtoms_CTAB);
+						fflush (stdout);
+						usleep (100000);
+						for (int i = 0; i < nAtoms_CTAB; ++i)
+						{
+							atoms[datafileIndex].x = pdbCoordinates[pdbIndex].x;
+							atoms[datafileIndex].y = pdbCoordinates[pdbIndex].y;
+							atoms[datafileIndex].z = pdbCoordinates[pdbIndex].z;
 
-						datafileIndex++; pdbIndex++;
+							// snprintf (pdbCoordinates[pdbIndex].molName, 2, "  ");
 
-						// printf("%d\n", datafileIndex);
-						// fflush (stdout);
+							datafileIndex++; pdbIndex++;
 
-						if (pdbIndex >= nPDBAtoms) {
-							pdbIndex = 0; }
-						if (datafileIndex >= datafileInfo.nAtoms) {
-							goto leaveThisWhileLoop; }
+							// printf("%d\n", datafileIndex);
+							// fflush (stdout);
+
+							if (pdbIndex >= nPDBAtoms) {
+								pdbIndex = 0; }
+							if (datafileIndex >= datafileInfo.nAtoms) {
+								goto leaveThisWhileLoop; }
+						}
+					}
+				}
+
+				if ((atoms[datafileIndex].molType == 2) && strstr (pdbCoordinates[pdbIndex].molName, "DDA"))
+				{
+					if (pdbIndex == 0)
+					{
+						printf("\nMatched with DDAB and molType = 2 at pdbIndex = %d. Iterating for the next %d times\n", pdbIndex, nAtoms_DDAB);
+						fflush (stdout);
+						usleep (100000);
+						for (int i = 0; i < nAtoms_DDAB; ++i)
+						{
+							atoms[datafileIndex].x = pdbCoordinates[pdbIndex].x;
+							atoms[datafileIndex].y = pdbCoordinates[pdbIndex].y;
+							atoms[datafileIndex].z = pdbCoordinates[pdbIndex].z;
+
+							snprintf (pdbCoordinates[pdbIndex].molName, 2, "  ");
+
+							datafileIndex++; pdbIndex++;
+
+							// printf("%d\n", datafileIndex);
+							// fflush (stdout);
+
+							if (pdbIndex >= nPDBAtoms) {
+								pdbIndex = 0; }
+							if (datafileIndex >= datafileInfo.nAtoms) {
+								goto leaveThisWhileLoop; }
+						}
+					}
+					else if (((pdbCoordinates[pdbIndex].molType - pdbCoordinates[pdbIndex - 1].molType) == 1))
+					{
+						printf("\nMatched with CTAB and molType = 1 at pdbIndex = %d. Iterating for the next %d times\n", pdbIndex, nAtoms_CTAB);
+						fflush (stdout);
+						usleep (100000);
+						for (int i = 0; i < nAtoms_CTAB; ++i)
+						{
+							atoms[datafileIndex].x = pdbCoordinates[pdbIndex].x;
+							atoms[datafileIndex].y = pdbCoordinates[pdbIndex].y;
+							atoms[datafileIndex].z = pdbCoordinates[pdbIndex].z;
+
+							snprintf (pdbCoordinates[pdbIndex].molName, 2, "  ");
+
+							datafileIndex++; pdbIndex++;
+
+							// printf("%d\n", datafileIndex);
+							// fflush (stdout);
+
+							if (pdbIndex >= nPDBAtoms) {
+								pdbIndex = 0; }
+							if (datafileIndex >= datafileInfo.nAtoms) {
+								goto leaveThisWhileLoop; }
+						}
 					}
 				}
 				else if (atoms[datafileIndex].molType > 2)
@@ -719,6 +794,7 @@ int main(int argc, char const *argv[])
 	atoms = replaceAtoms (atoms, datafileInfo, pdbCoordinates, nPDBAtomsAvailable);
 
 	printNewData (atoms, bonds, angles, dihedrals, impropers, datafileInfo, datafileBoundary, mass, pdbCoordinates, pdb, datafile, outputData, outputXYZ);
+	sleep (10);
 
 	fclose (inputData);
 	fclose (inputPDB);

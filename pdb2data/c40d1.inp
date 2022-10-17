@@ -1,15 +1,15 @@
-tolerance 5.0
+tolerance 4.0
 filetype pdb
 
 output c40d1.pdb
 
 structure CTAB.pdb
   number 195
-  inside box 3. 3. 18. 57. 57. 570.
+  inside box 3. 3. 18. 57. 57. 130.
 end structure
 
 structure DDAB.pdb
   number 5
-  inside box 3. 3. 18. 57. 57. 570.
+  inside box 3. 3. 18. 57. 57. 130.
 end structure
 
