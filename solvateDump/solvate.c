@@ -446,7 +446,7 @@ DATA_ATOMS *populateWater (DATA_ATOMS *atomsWater, int nWater, BOUNDS dumpfileBo
 					distance_H1_mol = sqrt (pow (atomsWater[currentWaterAtom + 1].x - atoms[i].x, 2) + pow (atomsWater[currentWaterAtom + 1].y - atoms[i].y, 2) + pow (atomsWater[currentWaterAtom + 1].z - atoms[i].z, 2));
 					distance_H2_mol = sqrt (pow (atomsWater[currentWaterAtom + 2].x - atoms[i].x, 2) + pow (atomsWater[currentWaterAtom + 2].y - atoms[i].y, 2) + pow (atomsWater[currentWaterAtom + 2].z - atoms[i].z, 2));
 
-					if ((distance_O_mol < 2) || (distance_H1_mol < 1.5) || (distance_H2_mol < 1.5)) {
+					if ((distance_O_mol < 1.8) || (distance_H1_mol < 0.2) || (distance_H2_mol < 0.2)) {
 						isOverlap = 1; }
 				}
 

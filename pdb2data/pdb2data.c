@@ -628,7 +628,7 @@ DATA_ATOMS *replaceAtoms (DATA_ATOMS *atoms, DATAFILE_INFO datafileInfo, PDB_ATO
 							atoms[datafileIndex].y = pdbCoordinates[pdbIndex].y;
 							atoms[datafileIndex].z = pdbCoordinates[pdbIndex].z;
 
-							snprintf (pdbCoordinates[pdbIndex].molName, 2, "  ");
+							snprintf (pdbCoordinates[pdbIndex].molName, 3, "  ");
 
 							datafileIndex++; pdbIndex++;
 
@@ -819,7 +819,7 @@ int main(int argc, char const *argv[])
 	atoms = replaceAtoms (atoms, datafileInfo, pdbCoordinates, maxPDBatom);
 
 	printNewData (atoms, bonds, angles, dihedrals, impropers, datafileInfo, datafileBoundary, mass, pdbCoordinates, pdb, datafile, outputData, outputXYZ);
-	sleep (10);
+	// sleep (10);
 
 	fclose (inputData);
 	fclose (inputPDB);

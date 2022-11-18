@@ -4,12 +4,22 @@ filetype pdb
 output c20d1.pdb
 
 structure CTAB.pdb
-  number 190
-  inside box 3. 3. 18. 57. 57. 130.
+  number 95
+  inside box 3. 3. 18. 57. 57. 60.
 end structure
 
 structure DDAB.pdb
-  number 10
-  inside box 3. 3. 18. 57. 57. 130.
+  number 5
+  inside box 3. 3. 18. 57. 57. 60.
+end structure
+
+structure CTAB.pdb
+  number 95
+  inside box 3. 3. -60. 57. 57. -2.
+end structure
+
+structure DDAB.pdb
+  number 5
+  inside box 3. 3. -60. 57. 57. -2.
 end structure
 
