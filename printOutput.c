@@ -40,6 +40,7 @@ void computeOutputBounds (CARTESIAN *lowerBounds, CARTESIAN *upperBounds, COORDI
 
 void writeCar (COORDINATES *outputCoordinates, int totalAtoms, SURFACTANT *inputStructures, int nSurfactants)
 {
+	printf("Writing CAR file...\n");
 	FILE *outputCAR, *outputXYZ;
 	outputCAR = fopen ("finalStructure.car", "w");
 	outputXYZ = fopen ("finalStructure.xyz", "w");
@@ -66,6 +67,7 @@ void writeCar (COORDINATES *outputCoordinates, int totalAtoms, SURFACTANT *input
 
 void writeMdf (COORDINATES *outputCoordinates, BONDS *outputBonds, int totalAtoms, SURFACTANT *inputStructures, int nSurfactants)
 {
+	printf("Writing MDF file...\n");
 	FILE *outputMDF;
 	outputMDF = fopen ("finalStructure.mdf", "w");
 

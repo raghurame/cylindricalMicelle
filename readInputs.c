@@ -42,6 +42,8 @@ SURFACTANT *storeSurfactantInformation (SURFACTANT *inputStructures, int nSurfac
 	char lineString[1000];
 	int currentSurfactant = 0, MOLECULE_BEGIN = 0, MOLECULE_END = 0;
 
+	printf("Number of surfactants: %d\n", nSurfactants);
+
 	while (fgets (lineString, 1000, readConfig) != NULL)
 	{
 		if (strstr (lineString, "begin surfactant"))
@@ -55,6 +57,7 @@ SURFACTANT *storeSurfactantInformation (SURFACTANT *inputStructures, int nSurfac
 		{
 			MOLECULE_END = 1;
 			MOLECULE_BEGIN = 0;
+			printf("\n");
 		}
 
 		if (currentSurfactant > nSurfactants)
@@ -70,6 +73,9 @@ SURFACTANT *storeSurfactantInformation (SURFACTANT *inputStructures, int nSurfac
 
 			if (strstr (lineString, "packingfactor"))
 				sscanf (lineString, "%*s %f", &inputStructures[currentSurfactant - 1].packingFactor);
+
+			printf("Input filename: %s\n", inputStructures[currentSurfactant - 1].filename);
+			printf("Number of molecules: %d\n", inputStructures[currentSurfactant - 1].nMolecules);
 		}
 	}
 
@@ -80,6 +86,7 @@ SURFACTANT *getNAtoms (SURFACTANT *inputStructures, int nSurfactants)
 {
 	char lineString[1000];
 	int nAtoms_local = 0;
+	printf("Reading atoms from input pdb file...\n");
 
 	for (int i = 0; i < nSurfactants; ++i)
 	{
@@ -104,6 +111,7 @@ SURFACTANT *getNAtoms (SURFACTANT *inputStructures, int nSurfactants)
 
 SURFACTANT *getNBonds (SURFACTANT *inputStructures, int nSurfactants)
 {
+	printf("Reading bonds from input pdb file...\n");
 	char lineString[1000];
 	int nBonds_local = 0;
 

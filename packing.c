@@ -254,6 +254,7 @@ int countTotalAtoms (SURFACTANT *inputStructures, int nSurfactants)
 		totalAtoms += (inputStructures[i].nAtoms * inputStructures[i].nMolecules);
 	}
 
+	printf("Total atoms: %d\n", totalAtoms);
 	return totalAtoms;
 }
 
@@ -401,6 +402,7 @@ COORDINATES *replicateSurfactants (COORDINATES **inputCoordinates, BONDS **input
 			zIncrement++; }
 	}
 
+	printf("Surfactants were replicated successfully!\n");
 	return outputCoordinates;
 }
 
@@ -447,6 +449,7 @@ void calculateGlobalMinMax (CARTESIAN *globalSurfactanthi, CARTESIAN *globalSurf
 
 BONDS *addBonds (COORDINATES *outputCoordinates, COORDINATES **inputCoordinates, BONDS **inputBonds, SURFACTANT *inputStructures, int nSurfactants)
 {
+	printf("Adding bonds...\n");
 	int totalAtoms = countTotalAtoms (inputStructures, nSurfactants);
 
 	BONDS *outputBonds;
